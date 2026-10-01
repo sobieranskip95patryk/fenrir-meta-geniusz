@@ -1,4 +1,6 @@
 {
   "name": "open_notepad",
+  "description": "Uruchamia Notatnik",
+  "intent": "OPEN_APP",
   "command": "notepad"
 }

@@ -3108,6 +3108,14 @@ window.FenrirUI = {
   const markRoute=(intent,route,note=null)=>FenrirInteractionDiagnostics?.route(interactionId,{intent,route,note});
   const markDone=(success=true,error=null,status=null)=>FenrirInteractionDiagnostics?.complete(interactionId,{success,error,status});
   const normalized=normalizeCommandText(query).replace(/^fenrir\s+/, '');
+  const openAppMatch=normalized.match(/^(?:otworz|otwórz|uruchom|włącz|wlacz)\s+(vs\s*code|vscode|notatnik|kalkulator|chrome|spotify|paint)$/);
+  if(openAppMatch){
+   markRoute('ACTION','runtime-open-application');
+   const result=await openApplication(openAppMatch[1]);
+   if(!result.success)throw new Error(result.error||'Nie udało się uruchomić aplikacji.');
+   await announce(`Uruchomiłem ${openAppMatch[1]}.`);
+   markDone(true);return;
+  }
   if(/^(stop|przerwij|cisza|przestan(?: mowic)?|zatrzymaj(?: glos| sie)?|skoncz mowic|chwila|poczekaj|anuluj)$/.test(normalized)){markRoute('CONTROL','voice-stop');FenrirVoice.stop({cancelTask:normalized==='anuluj'});markDone(true);return;}
   if(/^(powtorz|powiedz jeszcze raz|ponow odsluch|powtorz ostatnia odpowiedz)$/.test(normalized)){markRoute('CONTROL','repeat-speech');if(!FenrirVoice.repeat())await announce('Nie mam jeszcze wypowiedzi do powtórzenia.');markDone(true);return;}
   if(/^(wylacz glos|wycisz glos|nie mow|wylacz odpowiedzi glosowe)$/.test(normalized)){markRoute('CONTROL','mute-output');FenrirVoice.mute();this.message('Fenrir','Głos wyłączony. Nadal słucham poleceń.');recordSessionEntry('model','Głos wyłączony. Nadal słucham poleceń.');await persist();this.render();markDone(true);return;}
@@ -3376,5 +3384,7 @@ window.addEventListener('pagehide',()=>{FenrirVoice.pause();if(previewUrl)URL.re
 })();
 
 </script>
+../fenrir_runtime.jsscript>
+<script src="../fenrir_runtime.js"></script>
 </body>
 </html>

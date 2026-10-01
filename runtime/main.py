@@ -2,6 +2,7 @@ import os
 
 import psutil
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from runtime.services.powershell_service import run_ps
 from runtime.services.windows_service import open_application
@@ -9,6 +10,12 @@ from runtime.core.intents import APP_MAP
 from runtime.core.state import FENRIR_STATE
 
 app = FastAPI(title="FENRIR Runtime", version="0.1")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["null", "http://127.0.0.1:5500", "http://localhost:5500"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():

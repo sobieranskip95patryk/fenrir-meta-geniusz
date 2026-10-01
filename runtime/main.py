@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import psutil
 from fastapi import FastAPI
@@ -106,6 +107,6 @@ def system_dashboard():
     with get_connection() as conn:
         projects = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
         memories = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
-    skills = sum(1 for path in (os.path.join(os.path.dirname(__file__), "..", "..", "skills"),) for _ in __import__("pathlib").Path(path).rglob("*.json"))
+    skills = sum(1 for _ in (Path(__file__).resolve().parents[1] / "skills").rglob("*.json"))
     status = system_status()
     return {**status, "projects": projects, "skills": skills, "memories": memories}

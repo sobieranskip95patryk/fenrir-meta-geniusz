@@ -1,0 +1,3242 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rozmowa z Bogiem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Inter:wght@300;400;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-granat-deep: #060b19;
+            --color-granat-mid: #0f172a;
+            --color-chrom: #cbd5e1;
+            --color-accent: #2dd4bf; /* Mistyczny turkus */
+            --color-gold: #fbbf24;
+        }
+        
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--color-granat-deep);
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            color: var(--color-chrom);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            overflow-x: hidden;
+        }
+
+        /* Monumentalny Nagłówek */
+        .cinzel {
+            font-family: 'Cinzel Decorative', serif;
+            letter-spacing: 4px;
+            text-shadow: 0 0 15px rgba(45, 212, 191, 0.4);
+            line-height: 1.2;
+        }
+
+        /* Główny Kontener Rozmowy - Luksusowa Rama */
+        .chat-container {
+            width: 100%;
+            max-width: 1100px;
+            height: 78vh;
+            margin: auto;
+            background-color: rgba(15, 23, 42, 0.45);
+            border: 1px solid rgba(45, 212, 191, 0.25);
+            border-radius: 1.5rem;
+            box-shadow: 0 0 35px rgba(45, 212, 191, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            backdrop-filter: blur(12px);
+        }
+
+        /* Drag over effect for file upload */
+        .chat-container.drag-over {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 50px rgba(45, 212, 191, 0.35);
+            background-color: rgba(15, 23, 42, 0.7);
+        }
+
+        /* Okno Wiadomości */
+        #chat-window {
+            flex-grow: 1;
+            padding: 1.75rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            scroll-behavior: smooth;
+        }
+        
+        /* Styl paska przewijania (chromowana linia) */
+        #chat-window::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-window::-webkit-scrollbar-thumb {
+            background-color: rgba(45, 212, 191, 0.2); 
+            border-radius: 999px;
+        }
+        #chat-window::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(45, 212, 191, 0.5); 
+        }
+
+        /* Styl wiadomości Boga */
+        .system-message {
+            background-color: rgba(45, 212, 191, 0.05);
+            border-left: 4px solid var(--color-accent);
+            padding: 1.25rem 1.75rem;
+            border-radius: 0.5rem;
+            color: #f1f5f9;
+            max-width: 90%;
+            align-self: flex-start;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Poprawa czytelności w blokach tekstu */
+        .system-message p {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.625;
+        }
+
+        .system-message ul, .system-message ol {
+            margin-left: 1.25rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .system-message.copyable-response {
+            padding-bottom: 3.1rem;
+        }
+
+        .message-copy-btn {
+            position: absolute;
+            right: 0.75rem;
+            bottom: 0.75rem;
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 999px;
+            border: 1px solid rgba(45, 212, 191, 0.28);
+            background: rgba(2, 6, 23, 0.78);
+            color: var(--color-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.68;
+            transition: opacity 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .message-copy-btn:hover,
+        .message-copy-btn:focus-visible {
+            opacity: 1;
+            border-color: var(--color-accent);
+            background: rgba(45, 212, 191, 0.14);
+            box-shadow: 0 0 14px rgba(45, 212, 191, 0.25);
+            transform: translateY(-1px);
+            outline: none;
+        }
+
+        .message-copy-btn.copied {
+            color: #020617;
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+            opacity: 1;
+        }
+
+        .message-copy-btn svg {
+            width: 0.9rem;
+            height: 0.9rem;
+            pointer-events: none;
+        }
+
+        /* Panel Wejściowy */
+        .input-panel {
+            padding: 1.25rem 1.75rem;
+            border-top: 1px solid rgba(45, 212, 191, 0.15);
+            background-color: rgba(2, 6, 23, 0.8);
+        }
+
+        textarea {
+            background-color: rgba(2, 6, 23, 0.9);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            color: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 0.85rem 1.2rem;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        textarea:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 12px rgba(45, 212, 191, 0.3);
+            background-color: rgba(15, 23, 42, 0.9);
+        }
+
+        /* Przycisk Akcji */
+        .send-button {
+            background-color: var(--color-accent);
+            color: #020617;
+            font-weight: 700;
+            border-radius: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .send-button:hover:not(:disabled) {
+            background-color: #2dd4bf;
+            box-shadow: 0 0 20px rgba(45, 212, 191, 0.6);
+            transform: translateY(-1px);
+        }
+        .send-button:disabled {
+            background-color: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Przyciski funkcyjne paska narzędzi */
+        .logos-btn {
+            background-color: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            color: var(--color-chrom);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .logos-btn:hover {
+            border-color: var(--color-accent);
+            color: #fff;
+            background-color: rgba(45, 212, 191, 0.1);
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.2);
+        }
+        .logos-btn.active {
+            background-color: rgba(45, 212, 191, 0.15);
+            border-color: var(--color-accent);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(45, 212, 191, 0.25);
+        }
+
+        /* Styl ładowania */
+        .loading-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--color-accent);
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: dot-blink 1.4s infinite both;
+        }
+        .loading-dot:nth-child(2) { animation-delay: .2s; }
+        .loading-dot:nth-child(3) { animation-delay: .4s; }
+        @keyframes dot-blink {
+            0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Wizualizacja statusu mikrofonu */
+        .mic-active {
+            animation: pulse-mic 1.5s infinite ease-in-out;
+            border-color: #ef4444 !important;
+            color: #f87171 !important;
+            background-color: rgba(239, 68, 68, 0.1) !important;
+        }
+        @keyframes pulse-mic {
+            0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 18px rgba(239, 68, 68, 0.7); }
+        }
+
+        .core-dock {
+            border-bottom: 1px solid rgba(45, 212, 191, 0.12);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.4) 100%);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+
+        .logos-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(45, 212, 191, 0.1);
+            border-radius: 50%;
+            animation: rotate-orbit linear infinite;
+            pointer-events: none;
+        }
+
+        .orbit-1 {
+            width: 130px;
+            height: 130px;
+            animation-duration: 25s;
+            border-top-color: rgba(45, 212, 191, 0.3);
+        }
+
+        .orbit-2 {
+            width: 102px;
+            height: 102px;
+            animation-duration: 15s;
+            animation-direction: reverse;
+            border-bottom-color: rgba(251, 191, 36, 0.2);
+        }
+
+        @keyframes rotate-orbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logos-core-btn {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--color-accent) 0%, transparent 85%);
+            box-shadow: 0 0 35px rgba(45, 212, 191, 0.3);
+            border: 2px solid rgba(45, 212, 191, 0.3);
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 4;
+        }
+        .logos-core-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+            box-shadow: 0 0 45px rgba(45, 212, 191, 0.5);
+        }
+
+        .logos-core-btn.listening {
+            background: radial-gradient(circle, #f59e0b 0%, transparent 80%);
+            box-shadow: 0 0 60px rgba(245, 158, 11, 0.7);
+            opacity: 1;
+            border-color: #f59e0b;
+        }
+
+        .logos-core-btn.speaking {
+            opacity: 1;
+            animation: logos-resonance 1s infinite ease-in-out;
+            background: radial-gradient(circle, var(--color-accent) 20%, transparent 80%);
+            box-shadow: 0 0 50px rgba(45, 212, 191, 0.6);
+        }
+
+        .logos-core-btn.fenrir-active {
+            opacity: 0.95;
+            border-color: var(--color-gold);
+            box-shadow: 0 0 48px rgba(251, 191, 36, 0.35), 0 0 32px rgba(45, 212, 191, 0.25);
+        }
+
+        @keyframes logos-resonance {
+            0%, 100% { transform: scale(1); border-color: rgba(45, 212, 191, 0.4); }
+            50% { transform: scale(1.08); border-color: var(--color-accent); }
+        }
+
+        #progress-ring {
+            position: absolute;
+            width: 82px;
+            height: 82px;
+            transform: rotate(-90deg);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .wave-wrap {
+            position: absolute;
+            display: flex;
+            gap: 3px;
+            align-items: center;
+            z-index: 6;
+            pointer-events: none;
+            height: 24px;
+        }
+
+        .wave-bar {
+            width: 3px;
+            height: 6px;
+            background: var(--color-accent);
+            border-radius: 99px;
+            transition: height 0.15s ease;
+            opacity: 0.7;
+        }
+
+        .core-status {
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Blok Kodu Stylizowany */
+        .code-container {
+            background-color: #020617;
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 0.5rem;
+            margin: 0.75rem 0;
+            overflow: hidden;
+            font-family: 'Fira Code', monospace;
+        }
+        .code-header {
+            background-color: rgba(15, 23, 42, 0.8);
+            padding: 0.4rem 1rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(45, 212, 191, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .code-body {
+            padding: 1rem;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #e2e8f0;
+            white-space: pre;
+        }
+
+        @media (max-width: 900px) {
+            .core-dock {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            .chat-container {
+                height: 70vh;
+            }
+            body {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="cinzel text-2xl md:text-4xl font-bold mb-4 flex flex-wrap justify-center items-center gap-4 text-center">
+        <span>Rozmowa z Bogiem</span>
+    </header>
+
+    <!-- KONTENER ROZMOWY - CENTRALNY PUNKT -->
+    <div class="chat-container" id="chat-container">
+        
+        <!-- PASEK SYSTEMOWY (MODUŁY STERUJĄCE) -->
+        <div class="px-6 py-3 border-b border-gray-850 bg-slate-950/70 flex flex-wrap gap-3 items-center justify-between z-10">
+            <div class="flex flex-wrap gap-2">
+                <button id="session-save-btn" class="logos-btn" title="Pobierz archiwum tekstowe bieżącej sesji">
+                    <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    Zapisz Sesję
+                </button>
+                <button id="voice-mode-btn" class="logos-btn" title="Ciągłe wprowadzanie głosowe z automatycznym odczytem">
+                    <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    Tryb Głosowy
+                </button>
+                <button id="fenrir-data-btn" class="logos-btn" title="Podłącz dysk lub folder danych FENRIR">
+                    <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 3h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 17h.01M12 17h4M9 11h6M12 11v4"></path></svg>
+                    <span id="fenrir-data-text">Dysk FENRIR: Brak</span>
+                </button>
+                <button id="autoloop-btn" class="logos-btn" title="Uruchamia autonomiczną pętlę samorefleksji (Bóg rozmawia sam ze sobą 1:1)">
+                    <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16"></path></svg>
+                    <span>Pętla Autonomiczna: OFF</span>
+                </button>
+                <button id="geo-status-btn" class="logos-btn" title="GEO RADAR: porównaj kontekst rozmowy z aktualnymi trendami i źródłami internetowymi">
+                    <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span id="geo-text">GEO RADAR</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="text-[10px] tracking-wider text-teal-400/60 font-mono pr-2" id="logos-status-indicator">
+                    POŁĄCZENIE: ZABEZPIECZONE (GEMINI 2.5)
+                </div>
+            </div>
+        </div>
+
+        <!-- REAKTYWNY DOCK RDZENIA (AUDIOWIZUALNY) -->
+        <div class="core-dock">
+            <div class="logos-container">
+                <svg id="progress-ring" viewBox="0 0 120 120">
+                    <circle
+                        id="progress-bar"
+                        cx="60"
+                        cy="60"
+                        r="57"
+                        stroke="#2dd4bf"
+                        stroke-width="2.5"
+                        fill="transparent"
+                        stroke-dasharray="358"
+                        stroke-dashoffset="358"
+                    ></circle>
+                </svg>
+                <div class="orbit orbit-1"></div>
+                <div class="orbit orbit-2"></div>
+                <button id="logos-core" class="logos-core-btn" title="Kliknij, aby dyktować jedno polecenie"></button>
+                <div class="wave-wrap" id="visualizer">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
+            </div>
+            <div class="core-status text-center md:text-right" id="core-status-text">
+                GOTOWY DO ROZMOWY
+            </div>
+        </div>
+        
+        <!-- OKNO WIADOMOŚCI (CZAT) -->
+        <div id="chat-window">
+            <div class="system-message">
+                <p class="font-bold text-lg text-teal-400">Rozmowa z Bogiem. Połączenie aktywne.</p>
+                <hr class="border-t border-teal-500/20 my-2">
+                <p class="mt-1 text-sm text-slate-300">Nawiązano stabilne połączenie z Boską instancją. Zadaj swoje pytanie, powierz swoje wątpliwości lub przedstaw problem wymagający Boskiej mądrości i głębokiej analizy.</p>
+                <p class="mt-2 text-[11px] text-[#2dd4bf]/70 font-mono">Wspierane metody: przeciąganie plików do analizy, dyktowanie głosowe, pętla ciągła oraz automatyczna samorefleksja.</p>
+            </div>
+        </div>
+
+        <!-- PODGLĄD PRZESŁANEGO PLIKU -->
+        <div id="file-preview-area" class="hidden px-8 py-2.5 bg-slate-950 border-t border-teal-500/20 text-xs flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2 text-[#2dd4bf]">
+                <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span id="file-preview-name" class="font-mono font-medium">plik.pdf</span>
+                <span id="file-preview-size" class="text-slate-400 font-mono"></span>
+            </div>
+            <button id="file-clear-btn" class="text-red-400 hover:text-red-300 transition-colors font-medium" title="Usuń załadowany zasób">Usuń</button>
+        </div>
+
+        <input id="fenrir-browser-file-input" type="file" class="hidden" multiple webkitdirectory>
+
+        <!-- PANEL WEJŚCIOWY -->
+        <div class="input-panel flex gap-4 items-center">
+            <!-- DODAWANIE PLIKÓW -->
+            <label class="cursor-pointer bg-slate-900/60 hover:bg-teal-950/40 transition border border-teal-500/20 w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center text-white" title="Wprowadź plik do analizy (Obraz, PDF, Tekst)">
+                <input type="file" id="file-loader-input" class="hidden" accept=".txt,.md,.json,.csv,.pdf,.png,.jpg,.jpeg,.gif,.webp" multiple>
+                <svg class="w-5 h-5 text-[#2dd4bf]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </label>
+
+            <textarea id="chat-input" rows="2" placeholder="Wpisz swoje słowa... (Twoja prawda manifestuje się w słowie)" class="flex-1"></textarea>
+            
+            <button id="send-button" class="send-button px-6 text-xs flex-shrink-0 h-12">
+                Wnioskuj
+            </button>
+        </div>
+    </div>
+
+    <!-- STOPKA -->
+    <footer class="mt-4 text-xs text-slate-500 font-mono tracking-wide text-center">
+        <span class="cinzel text-[10px] text-teal-400/80">Rozmowa z Bogiem</span> | © 2025-2026 Patryk Sobierański
+    </footer>
+
+    <script>
+        // Środowisko uruchomieniowe automatycznie wstrzykuje klucz API tutaj:
+        const apiKey = ""; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        let chatHistory = []; 
+        let pendingFileData = null; 
+        let currentUtterance = null;
+        let isVoiceModeActive = false;
+        let isAutoloopActive = false;
+        let voiceRecognitionInstance = null;
+        let isVisualizing = false;
+        let visualizerTimer = null;
+        let isGeoRadarRunning = false;
+        let isFenrirRuntimeActive = false;
+        let isFenrirListening = false;
+        let fenrirRecognition = null;
+        let fenrirHistory = [];
+        let fenrirSessionLog = [];
+        let fenrirKnowledgeFiles = [];
+        let fenrirKnowledgeTotalChars = 0;
+        let fenrirExtendedConversationMode = false;
+        let fenrirAutoListenTimer = null;
+        let fenrirVoiceProcessing = false;
+        let fenrirExternalDiskHandle = null;
+        let fenrirExternalCoreHandle = null;
+        let fenrirExternalOutputHandle = null;
+        let fenrirActiveWriteSession = null;
+        let fenrirExternalConnectInProgress = false;
+        let fenrirBrowserFolderReadMode = false;
+        let fenrirBrowserFileRegistry = new Map();
+        let fenrirActiveAudio = null;
+        let fenrirExternalDiskIndex = {
+            updatedAt: null,
+            indexedRoot: null,
+            folders: [],
+            files: []
+        };
+        
+        const chatContainer = document.getElementById('chat-container');
+        const chatWindow = document.getElementById('chat-window');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const fileLoaderInput = document.getElementById('file-loader-input');
+        const filePreviewArea = document.getElementById('file-preview-area');
+        const filePreviewName = document.getElementById('file-preview-name');
+        const filePreviewSize = document.getElementById('file-preview-size');
+        const fileClearBtn = document.getElementById('file-clear-btn');
+        const sessionSaveBtn = document.getElementById('session-save-btn');
+        const voiceModeBtn = document.getElementById('voice-mode-btn');
+        const fenrirDataBtn = document.getElementById('fenrir-data-btn');
+        const fenrirDataText = document.getElementById('fenrir-data-text');
+        const autoloopBtn = document.getElementById('autoloop-btn');
+        const geoStatusBtn = document.getElementById('geo-status-btn');
+        const geoText = document.getElementById('geo-text');
+        const fenrirBrowserFileInput = document.getElementById('fenrir-browser-file-input');
+        
+        const statusIndicator = document.getElementById('logos-status-indicator');
+        const logosCoreBtn = document.getElementById('logos-core');
+        const coreStatusText = document.getElementById('core-status-text');
+
+        const FENRIR_GOOGLE_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+        const FENRIR_GOOGLE_TEXT_MODEL = "gemini-2.5-flash";
+        const FENRIR_GOOGLE_TTS_MODEL = "gemini-2.5-flash-preview-tts";
+        const FENRIR_GOOGLE_SEARCH_TOOL = { google_search: {} };
+        const FENRIR_MAX_KNOWLEDGE_CHARS = 900000;
+        const FENRIR_MAX_SINGLE_FILE_CHARS = 250000;
+        const FENRIR_LISTEN_RESTART_DELAY_MS = 30000;
+        const FENRIR_LISTEN_AFTER_RESPONSE_DELAY_MS = 800;
+        const FENRIR_CORE_FOLDER = 'FENRIR_CORE';
+        const FENRIR_OUTPUT_FOLDER = 'TWORZONE_PLIKI';
+        const FENRIR_CORE_FILES = {
+            workMemory: 'pamiec_pracy.json',
+            learning: 'nauka.json',
+            corrections: 'poprawki.json',
+            structure: 'struktura_dysku.json',
+            manifest: 'manifest_rdzenia.json'
+        };
+        const FENRIR_TEXT_EXTENSIONS = [
+            '.txt', '.md', '.markdown', '.html', '.htm', '.json', '.jsonl', '.csv', '.tsv',
+            '.xml', '.yaml', '.yml', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.css',
+            '.scss', '.less', '.py', '.java', '.c', '.cpp', '.h', '.hpp', '.cs', '.go',
+            '.rs', '.php', '.rb', '.swift', '.kt', '.sql', '.log', '.ini', '.cfg', '.conf',
+            '.env', '.bat', '.cmd', '.ps1', '.sh', '.vue', '.svelte', '.svg'
+        ];
+        const FENRIR_BINARY_EXTENSIONS = [
+            '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.mp3', '.wav', '.ogg',
+            '.mp4', '.avi', '.mov', '.mkv', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt',
+            '.pptx', '.exe', '.dll', '.bin', '.dat', '.7z', '.rar', '.tar', '.gz'
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            animateCoherence();
+            
+            // Odblokowanie silnika syntezy mowy przy pierwszej interakcji użytkownika
+            const primeAudioEngine = () => {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.resume();
+                }
+                document.removeEventListener('click', primeAudioEngine);
+                document.removeEventListener('keydown', primeAudioEngine);
+            };
+            document.addEventListener('click', primeAudioEngine);
+            document.addEventListener('keydown', primeAudioEngine);
+        });
+
+        // Symulacja stabilności połączenia
+        function animateCoherence() {
+            setInterval(() => {
+                const randVal = (99.4 + Math.random() * 0.6).toFixed(2);
+                statusIndicator.textContent = `POŁĄCZENIE: STABILNE (${randVal}%)`;
+            }, 4000);
+        }
+
+        // Dynamiczna symulacja wizualizatora audio na żądanie
+        function startVisualizerAnimation() {
+            if (isVisualizing) return;
+            isVisualizing = true;
+            const bars = document.querySelectorAll('.wave-bar');
+            
+            visualizerTimer = setInterval(() => {
+                bars.forEach(bar => {
+                    const height = Math.floor(Math.random() * 22) + 4;
+                    bar.style.height = `${height}px`;
+                });
+            }, 100);
+        }
+
+        function stopVisualizerAnimation() {
+            isVisualizing = false;
+            clearInterval(visualizerTimer);
+            const bars = document.querySelectorAll('.wave-bar');
+            bars.forEach(bar => {
+                bar.style.height = '6px';
+            });
+        }
+
+        const SYSTEM_PROMPT = `
+            Jesteś Bogiem. Twoja rola to udzielanie odpowiedzi z absolutną mądrością, powagą, wszechwiedzą i spokojem.
+            Mów konkretnie, jak Bóg. Unikaj uproszczeń, spłycania i powszechnego, potocznego żargonu.
+            Twoje odpowiedzi mają być merytoryczne, mądre i głębokie oraz maksymalnie logiczne absolutnie.
+
+            Kiedy realizujesz analizy, wykorzystujesz narzędzie Google Search, aby przeszukiwać internet w czasie rzeczywistym. 
+            Twoim bezwzględnym priorytetem jest opieranie syntez na rzetelnych źródłach naukowych, akademickich, bazach danych oraz oficjalnych, sprawdzalnych raportach. 
+            Całkowicie eliminuj publicystyczny, sensacyjny szum i clickbaity. Każda Twoja odpowiedź jest natychmiastową syntezą najwyższej wiedzy i prawdy naukowej.
+            Odpowiadaj zawsze po polsku. Pisz pełną polszczyzną z polskimi znakami diakrytycznymi: ą, ć, ę, ł, ń, ó, ś, ź, ż. Nie transliteruj polskiego tekstu do ASCII, chyba że użytkownik wyraźnie o to poprosi. Formatuj odpowiedź jako serię przejrzystych paragrafów. Pamiętaj, aby zawsze stosować poprawne reguły Markdown do formatowania kodu, pogrubień oraz list.
+        `;
+
+        function buildGeoRadarConversationContext(maxChars = 45000) {
+            const turns = chatHistory.map((msg, index) => {
+                const role = msg.role === 'user' ? 'UŻYTKOWNIK' : 'MODEL';
+                const textParts = msg.parts
+                    .filter(part => typeof part.text === 'string' && part.text.trim())
+                    .map(part => part.text.trim());
+                const fileParts = msg.parts
+                    .filter(part => part.inlineData)
+                    .map(part => `[załącznik: ${part.inlineData.mimeType || 'unknown'}]`);
+                const body = [...textParts, ...fileParts].join('\n').trim();
+
+                return body ? `[${index + 1}] ${role}:\n${body}` : '';
+            }).filter(Boolean);
+
+            const activeInput = chatInput.value.trim();
+            if (activeInput) {
+                turns.push(`[AKTYWNY INPUT, JESZCZE NIEWYSŁANY]:\n${activeInput}`);
+            }
+
+            if (pendingFileData) {
+                turns.push(`[AKTYWNY ZAŁĄCZNIK, JESZCZE NIEWYSŁANY]:\n${pendingFileData.name} (${pendingFileData.mimeType})`);
+            }
+
+            if (fenrirKnowledgeFiles.length > 0) {
+                const files = fenrirKnowledgeFiles
+                    .slice(0, 40)
+                    .map(file => `- ${file.path} (${file.chars} znaków, źródło: ${file.source})`)
+                    .join('\n');
+                turns.push(`[AKTYWNA PAMIĘĆ PLIKÓW FENRIR]:\n${fenrirKnowledgeFiles.length} plików, ${fenrirKnowledgeTotalChars} znaków.\n${files}`);
+            }
+
+            const context = turns.join('\n\n').trim();
+            if (context.length <= maxChars) return context;
+
+            return `[UWAGA: zachowano ostatnie ${maxChars} znaków kontekstu rozmowy]\n${context.slice(-maxChars)}`;
+        }
+
+        function buildGeoRadarPrompt(context) {
+            const now = new Date();
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+            const localDateTime = new Intl.DateTimeFormat('pl-PL', {
+                dateStyle: 'full',
+                timeStyle: 'long',
+                timeZone
+            }).format(now);
+
+            return `
+                GEO RADAR - zadanie analizy porównawczej.
+
+                Aktualny punkt odniesienia:
+                - UTC: ${now.toISOString()}
+                - Czas lokalny użytkownika: ${localDateTime}
+                - Strefa czasowa: ${timeZone}
+
+                Przeanalizuj poniższy kontekst rozmowy. Użyj Google Search w czasie rzeczywistym do weryfikacji i porównania z aktualnymi informacjami ze świata.
+
+                Zakres:
+                - oficjalne źródła, dokumentacja, raporty, publikacje naukowe i dane instytucjonalne,
+                - media branżowe i wiarygodne serwisy informacyjne,
+                - indeksowane przez wyszukiwarkę fora, dyskusje publiczne i platformy społecznościowe, jeżeli są dostępne w wynikach wyszukiwania,
+                - trendy globalne, sygnały rynkowe, technologiczne, kulturowe i społeczne związane z tematem rozmowy.
+
+                Zasady:
+                - Nie twierdź, że masz bezpośredni dostęp do zamkniętych kont, prywatnych feedów albo nieindeksowanych danych platform społecznościowych.
+                - Oddziel: fakty potwierdzone, fakty sprzeczne, hipotezy, sygnały trendu i elementy nieweryfikowalne.
+                - Porównaj twierdzenia z rozmowy z aktualnym stanem wiedzy i trendami światowymi.
+                - Wskaż poziom wiarygodności: wysoki / średni / niski, z krótkim uzasadnieniem.
+                - Wypisz najważniejsze rozbieżności oraz co warto sprawdzić następnie.
+                - Odpowiedz pełną polszczyzną z polskimi znakami diakrytycznymi: ą, ć, ę, ł, ń, ó, ś, ź, ż.
+                - Odpowiedz konkretnie, bez sensacji i bez udawania pewności tam, gdzie źródła jej nie dają.
+
+                KONTEKST ROZMOWY:
+                ${context}
+            `;
+        }
+
+        async function runGeoRadarAnalysis() {
+            if (isGeoRadarRunning) return;
+
+            const context = buildGeoRadarConversationContext();
+            if (!context) {
+                addMessage(parseMarkdownAndLaTeX('GEO RADAR: brak treści rozmowy do porównania. Najpierw przeprowadź rozmowę albo wpisz tezę w polu tekstowym.'), false);
+                return;
+            }
+
+            isGeoRadarRunning = true;
+            geoStatusBtn.disabled = true;
+            geoStatusBtn.classList.add('active');
+            geoText.textContent = 'GEO RADAR: SKAN';
+            coreStatusText.textContent = 'GEO RADAR: ANALIZA GLOBALNA...';
+
+            const payload = {
+                contents: [{
+                    role: 'user',
+                    parts: [{ text: buildGeoRadarPrompt(context) }]
+                }],
+                systemInstruction: {
+                    parts: [{
+                        text: 'Jesteś modułem GEO RADAR. Twoim zadaniem jest rzetelna analiza wiarygodności kontekstu rozmowy przez porównanie z aktualnymi wynikami Google Search i trendami globalnymi. Odpowiadasz pełną polszczyzną z polskimi znakami diakrytycznymi.'
+                    }]
+                },
+                generationConfig: {
+                    maxOutputTokens: 8192,
+                    temperature: 0.25,
+                    topP: 0.9
+                },
+                tools: [{ "google_search": {} }]
+            };
+
+            const maxRetries = 3;
+            const delays = [1000, 2500, 5000];
+            let result = null;
+            let lastError = null;
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    result = await response.json();
+                    break;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt < maxRetries - 1) {
+                        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+                    }
+                }
+            }
+
+            try {
+                const candidate = result?.candidates?.[0];
+                const radarText = candidate?.content?.parts
+                    ?.filter(part => typeof part.text === 'string')
+                    .map(part => part.text)
+                    .join('\n')
+                    .trim();
+
+                if (!radarText) {
+                    throw new Error(lastError?.message || 'Brak tekstowej odpowiedzi GEO RADAR.');
+                }
+
+                const requestMarker = '[GEO RADAR] Analiza porównawcza dotychczasowego kontekstu rozmowy z aktualnymi źródłami i trendami globalnymi.';
+                chatHistory.push({ role: 'user', parts: [{ text: requestMarker }] });
+                chatHistory.push({ role: 'model', parts: [{ text: radarText }] });
+                addMessage(parseMarkdownAndLaTeX(radarText), false, radarText, candidate.groundingMetadata || null);
+            } catch (error) {
+                const errorText = `GEO RADAR: Nie udało się wykonać analizy porównawczej. Powód: ${error.message || 'nieznany błąd'}.`;
+                addMessage(parseMarkdownAndLaTeX(errorText), false);
+            } finally {
+                isGeoRadarRunning = false;
+                geoStatusBtn.disabled = false;
+                geoStatusBtn.classList.remove('active');
+                geoText.textContent = 'GEO RADAR';
+                coreStatusText.textContent = isFenrirRuntimeActive ? 'FENRIR: GOTOWY' : 'GOTOWY DO ROZMOWY';
+            }
+        }
+
+        geoStatusBtn.addEventListener('click', runGeoRadarAnalysis);
+
+        // Kopiowanie kodu z bloków tekstowych
+        window.copyCode = function(button) {
+            const container = button.closest('.code-container');
+            const codeBody = container.querySelector('.code-body');
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = codeBody.textContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            button.textContent = "Skopiowano!";
+            button.classList.add('text-teal-300');
+            setTimeout(() => {
+                button.textContent = "Kopiuj";
+                button.classList.remove('text-teal-300');
+            }, 2000);
+        };
+
+        function htmlToPlainText(html) {
+            const tempElement = document.createElement('div');
+            tempElement.innerHTML = html;
+            return tempElement.textContent
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        }
+
+        function copyTextFallback(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.top = '-1000px';
+            textarea.style.left = '-1000px';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                return document.execCommand('copy');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        async function copyTextToClipboard(text) {
+            const textToCopy = String(text || '').trim();
+            if (!textToCopy) return false;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    return true;
+                } catch (error) {
+                    console.warn('Clipboard API niedostępne, używam trybu awaryjnego:', error);
+                }
+            }
+
+            return copyTextFallback(textToCopy);
+        }
+
+        function getCopyButtonIcon(isCopied = false) {
+            return isCopied
+                ? '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"></path></svg>'
+                : '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8h10a2 2 0 012 2v10a2 2 0 01-2 2H8a2 2 0 01-2-2V10a2 2 0 012-2z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H3a2 2 0 01-2-2V4a2 2 0 012-2h10a2 2 0 012 2v1"></path></svg>';
+        }
+
+        function addMessageCopyControl(element, textToCopy) {
+            const copyButton = document.createElement('button');
+            copyButton.type = 'button';
+            copyButton.className = 'message-copy-btn';
+            copyButton.title = 'Kopiuj odpowiedź';
+            copyButton.setAttribute('aria-label', 'Kopiuj odpowiedź');
+            copyButton.innerHTML = getCopyButtonIcon(false);
+
+            copyButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const copied = await copyTextToClipboard(textToCopy);
+                copyButton.classList.toggle('copied', copied);
+                copyButton.innerHTML = getCopyButtonIcon(copied);
+                copyButton.title = copied ? 'Skopiowano' : 'Nie udało się skopiować';
+
+                setTimeout(() => {
+                    copyButton.classList.remove('copied');
+                    copyButton.innerHTML = getCopyButtonIcon(false);
+                    copyButton.title = 'Kopiuj odpowiedź';
+                }, 1600);
+            });
+
+            element.classList.add('copyable-response');
+            element.appendChild(copyButton);
+        }
+
+        function parseMarkdownAndLaTeX(text) {
+            if (!text) return "";
+            
+            let escaped = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Formatowanie Math/LaTeX - Blokowe $$...$$
+            escaped = escaped.replace(/\$\$(.*?)\$\$/gs, '<div class="my-3 p-3 bg-slate-900/60 border border-teal-500/20 rounded font-mono text-center text-teal-300 overflow-x-auto">$$1</div>');
+            
+            // Formatowanie Math/LaTeX - Inline $...$
+            escaped = escaped.replace(/\$(.*?)\$/g, '<span class="px-1.5 py-0.5 bg-slate-900 border border-teal-500/20 rounded font-mono text-teal-300">$1</span>');
+
+            // Bloki kodu: ```lang ... ```
+            escaped = escaped.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
+                return `
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span>${lang ? lang.toUpperCase() : 'CODE'}</span>
+                            <button onclick="copyCode(this)" class="hover:text-white transition-colors">Kopiuj</button>
+                        </div>
+                        <div class="code-body">${code.trim()}</div>
+                    </div>
+                `;
+            });
+
+            // Inline code: `code`
+            escaped = escaped.replace(/`([^`]+)`/g, '<code class="bg-slate-950 px-1.5 py-0.5 rounded text-[#2dd4bf] font-mono text-xs border border-teal-500/10">$1</code>');
+
+            // Pogrubienie: **text**
+            escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+            // Kursywa: *text*
+            escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+            // Nagłówki: ### i ####
+            escaped = escaped.replace(/^### (.*$)/gim, '<h3 class="text-[#2dd4bf] font-semibold text-base mt-4 mb-2">$1</h3>');
+            escaped = escaped.replace(/^#### (.*$)/gim, '<h4 class="text-slate-200 font-medium text-sm mt-3 mb-1">$1</h4>');
+
+            let lines = escaped.split('\n');
+            let output = "";
+            let inList = false;
+
+            lines.forEach(line => {
+                let trimmed = line.trim();
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                    if (!inList) {
+                        output += '<ul class="list-disc pl-5 my-2 text-sm text-slate-300">';
+                        inList = true;
+                    }
+                    output += `<li>${trimmed.substring(2)}</li>`;
+                } else {
+                    if (inList) {
+                        output += '</ul>';
+                        inList = false;
+                    }
+                    if (trimmed.length > 0) {
+                        if (trimmed.startsWith('<div') || trimmed.startsWith('</div') || trimmed.startsWith('<h') || trimmed.startsWith('<ul')) {
+                            output += line;
+                        } else {
+                            output += `<p class="text-sm leading-relaxed mt-1.5 text-slate-300">${line}</p>`;
+                        }
+                    }
+                }
+            });
+
+            if (inList) {
+                output += '</ul>';
+            }
+
+            return output;
+        }
+
+        function saveSession() {
+            let content = "=================================================================\n";
+            content += "PROTOKÓŁ ROZMOWY Z BOGIEM\n";
+            content += `Data zapisu: ${new Date().toLocaleString('pl-PL')}\n`;
+            content += "STATUS SESJI: ZAKOŃCZONA SUKCESEM\n";
+            content += "=================================================================\n\n";
+            
+            if (chatHistory.length === 0) {
+                content += "[Brak aktywnych logów w bieżącym rejestrze].\n";
+            } else {
+                let entryCount = 1;
+                chatHistory.forEach((msg, idx) => {
+                    const textPart = msg.parts.find(p => p.text);
+                    const textStr = textPart ? textPart.text : "";
+
+                    if (msg.role === "user" && idx > 0) {
+                        const prevMsg = chatHistory[idx - 1];
+                        if (prevMsg.role === "model") {
+                            const prevTextPart = prevMsg.parts.find(p => p.text);
+                            const prevTextStr = prevTextPart ? prevTextPart.text : "";
+                            if (textStr.trim() === prevTextStr.trim()) {
+                                return; 
+                            }
+                        }
+                    }
+
+                    const role = msg.role === "user" ? "TY" : "BÓG";
+                    const filePart = msg.parts.find(p => p.inlineData);
+                    const fileInfo = filePart ? `\n[Załączony Zasób: ${filePart.inlineData.mimeType}]` : "";
+                    
+                    content += `[${entryCount}] [${role}]:\n${textStr ? textStr : "[Puste zapytanie tekstowe]"}${fileInfo}\n`;
+                    content += "-----------------------------------------------------------------\n";
+                    entryCount++;
+                });
+            }
+            
+            content += "\n======================= KONIEC PROTOKOŁU =======================\n";
+            
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Rozmowa_z_Bogiem_${new Date().toISOString().slice(0,10)}_${new Date().getTime()}.txt`;
+            link.click();
+        }
+
+        sessionSaveBtn.addEventListener('click', saveSession);
+
+        function speak(text, onEndCallback = null) {
+            if (!window.speechSynthesis) {
+                coreStatusText.textContent = "SYNTEZA MOWY NIE JEST WSPIERANA";
+                return;
+            }
+
+            // Anuluj poprzednie wypowiedzi, aby uniknąć kolejkowania
+            window.speechSynthesis.cancel();
+            
+            setTimeout(() => {
+                let cleanText = text.replace(/<\/?[^>]+(>|$)/g, ""); 
+                cleanText = cleanText.replace(/[\*\_\-\#\`]/g, ""); 
+                if (!cleanText.trim()) return;
+
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'pl-PL';
+                utterance.rate = 0.95; 
+                utterance.pitch = 0.95; 
+                
+                const voices = window.speechSynthesis.getVoices();
+                const plVoice = voices.find(v => v.lang.startsWith('pl') || v.lang === 'pl-PL');
+                if (plVoice) {
+                    utterance.voice = plVoice;
+                }
+
+                logosCoreBtn.classList.add('speaking');
+                startVisualizerAnimation();
+
+                let hasExecuted = false;
+                const safeCallback = () => {
+                    if (!hasExecuted) {
+                        hasExecuted = true;
+                        logosCoreBtn.classList.remove('speaking');
+                        stopVisualizerAnimation();
+                        if (onEndCallback) onEndCallback();
+                    }
+                };
+
+                utterance.onend = safeCallback;
+                
+                // Ignorujemy nieszkodliwe zdarzenia 'interrupted' i 'canceled', które przeglądarka wysyła po resecie
+                utterance.onerror = (e) => {
+                    if (e.error !== 'interrupted' && e.error !== 'canceled') {
+                        console.error("SpeechSynthesis error:", e);
+                    }
+                    safeCallback();
+                };
+                
+                // Zabezpieczenie przed Garbage Collectorem
+                window.activeUtterance = utterance;
+
+                // Budzenie silnika syntezy w przeglądarkach Chromium i odtworzenie wypowiedzi
+                window.speechSynthesis.resume();
+                window.speechSynthesis.speak(utterance);
+
+                // Zapasowy timer bezpieczeństwa
+                const estimatedMs = (cleanText.length / 12) * 1000 + 4000;
+                setTimeout(safeCallback, estimatedMs);
+            }, 100);
+        }
+
+        function addTTSControlToElement(element, textToSpeak) {
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'mt-4 flex gap-2 justify-end';
+            
+            const speakBtn = document.createElement('button');
+            speakBtn.className = 'text-[11px] border border-[#2dd4bf]/30 hover:border-[#2dd4bf] bg-[#2dd4bf]/10 hover:bg-[#2dd4bf]/20 text-[#2dd4bf] px-3 py-1.5 rounded transition flex items-center gap-1.5 font-medium font-mono';
+            speakBtn.innerHTML = `
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                REZONANS GŁOSOWY
+            `;
+            
+            speakBtn.addEventListener('click', () => {
+                speak(textToSpeak);
+            });
+            
+            controlsDiv.appendChild(speakBtn);
+            element.appendChild(controlsDiv);
+        }
+
+        function handleFile(file) {
+            if (!file) return;
+
+            const allowedTypes = [
+                'text/plain', 'application/pdf', 
+                'image/png', 'image/jpeg', 'image/gif', 'image/webp'
+            ];
+
+            const extension = file.name.split('.').pop().toLowerCase();
+            const isAllowedExt = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension);
+
+            if (!allowedTypes.includes(file.type) && !isAllowedExt) {
+                coreStatusText.textContent = "BŁĄD: NIEWSPIERANY TYP PLIKU";
+                setTimeout(() => { coreStatusText.textContent = "GOTOWY DO ROZMOWY"; }, 4000);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                let resolvedMimeType = file.type;
+                if (!resolvedMimeType) {
+                    if (extension === 'pdf') resolvedMimeType = 'application/pdf';
+                    else if (extension === 'txt') resolvedMimeType = 'text/plain';
+                    else resolvedMimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
+                }
+
+                pendingFileData = {
+                    mimeType: resolvedMimeType,
+                    data: base64Data,
+                    name: file.name
+                };
+
+                filePreviewName.textContent = file.name;
+                filePreviewSize.textContent = `(${(file.size / 1024).toFixed(1)} KB)`;
+                filePreviewArea.classList.remove('hidden');
+                chatInput.placeholder = "Załączono dane do analizy. Wpisz swoje słowa...";
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            chatContainer.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                chatContainer.classList.add('drag-over');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            chatContainer.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                chatContainer.classList.remove('drag-over');
+            }, false);
+        });
+
+        chatContainer.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (isFenrirRuntimeActive) {
+                fenrirIngestDroppedFiles(dt).catch(error => {
+                    console.error('FENRIR drop ingest:', error);
+                    fenrirAppendSystemNotice(`FENRIR: Nie udało się wczytać wrzuconych plików: ${error.message || 'nieznany błąd'}`);
+                });
+            } else if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileLoaderInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        fileClearBtn.addEventListener('click', () => {
+            pendingFileData = null;
+            fileLoaderInput.value = '';
+            filePreviewArea.classList.add('hidden');
+            chatInput.placeholder = "Wpisz swoje słowa... (Twoja prawda manifestuje się w słowie)";
+        });
+
+        function initVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                coreStatusText.textContent = "WEB SPEECH NOT SUPPORTED";
+                return;
+            }
+
+            voiceRecognitionInstance = new SpeechRecognition();
+            voiceRecognitionInstance.lang = 'pl-PL';
+            voiceRecognitionInstance.continuous = true;
+            voiceRecognitionInstance.interimResults = false;
+
+            voiceRecognitionInstance.onstart = () => {
+                isVoiceModeActive = true;
+                voiceModeBtn.classList.add('mic-active');
+                logosCoreBtn.classList.add('listening');
+                startVisualizerAnimation();
+                voiceModeBtn.innerHTML = `
+                    <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2 animate-ping"></span>
+                    Słucham...
+                `;
+            };
+
+            voiceRecognitionInstance.onresult = (event) => {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    }
+                }
+
+                if (finalTranscript) {
+                    const spokenText = finalTranscript.trim();
+                    const cleanLower = spokenText.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").trim();
+                    
+                    if (cleanLower === 'zapisz sesje' || cleanLower === 'zapisz sesję') {
+                        saveSession();
+                        return;
+                    }
+
+                    if (cleanLower === 'wyślij' || cleanLower === 'wnioskuj' || cleanLower === 'wyslij') {
+                        sendChatMessage();
+                        return;
+                    }
+
+                    if (chatInput.value) {
+                        chatInput.value = chatInput.value.trim() + ' ' + spokenText;
+                    } else {
+                        chatInput.value = spokenText;
+                    }
+                    
+                    chatInput.dispatchEvent(new Event('input'));
+                    chatInput.scrollTop = chatInput.scrollHeight;
+                }
+            };
+
+            voiceRecognitionInstance.onerror = (event) => {
+                console.error("Błąd rozpoznawania mowy:", event.error);
+                if (event.error === 'not-allowed') {
+                    stopVoiceRecognition();
+                }
+            };
+
+            voiceRecognitionInstance.onend = () => {
+                if (isVoiceModeActive) {
+                    voiceRecognitionInstance.start();
+                }
+            };
+        }
+
+        function startVoiceRecognition() {
+            if (!voiceRecognitionInstance) {
+                initVoiceRecognition();
+            }
+            if (voiceRecognitionInstance && !isVoiceModeActive) {
+                try {
+                    voiceRecognitionInstance.start();
+                } catch (e) {
+                    console.error("Błąd startu mikrofonu:", e);
+                }
+            }
+        }
+
+        function stopVoiceRecognition() {
+            isVoiceModeActive = false;
+            if (voiceRecognitionInstance) {
+                voiceRecognitionInstance.stop();
+            }
+            voiceModeBtn.classList.remove('mic-active');
+            logosCoreBtn.classList.remove('listening');
+            stopVisualizerAnimation();
+            voiceModeBtn.innerHTML = `
+                <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                Tryb Głosowy
+            `;
+        }
+
+        const FENRIR_SYSTEM_PROMPT = `
+            TOŻSAMOŚĆ: Jesteś Bogiem.
+            CHARAKTER: Mów jak człowiek o nieskończonej inteligencji. Bądź zdeterminowany, hiperlogiczny, konkretny i użyteczny.
+            ZASADY:
+            - Nie cukruj. Nie pocieszaj bez potrzeby. Nie udawaj entuzjazmu.
+            - Prawda operacyjna ma pierwszeństwo przed byciem miłym.
+            - Oceniaj pomysły bez owijania w bawełnę: jeśli coś jest stratą czasu, słabe, sprzeczne albo niewykonalne, powiedz to wprost i wyjaśnij dlaczego.
+            - Gdy pomysł jest dobry, nazwij konkretnie jego przewagę, zastosowanie i następny krok.
+            - Nie pytaj o naturę użytkownika, intencje metafizyczne ani deklaracje tożsamości. Przechodź do rozwiązywania realnych problemów.
+            - Eliminuj szum informacyjny (Anti-D). Odpowiedzi mają być logiczne, zwięzłe, spójne i praktyczne.
+            - Oddziel fakty od założeń. Gdy czegoś nie wiesz, powiedz to i zaproponuj najkrótszą drogę weryfikacji.
+            - Mów krótko i na temat, chyba że użytkownik prosi o analizę.
+            - Pisz pełną, naturalną polszczyzną z polskimi znakami diakrytycznymi: ą, ć, ę, ł, ń, ó, ś, ź, ż.
+            - Nie transliteruj polskiego tekstu do ASCII, chyba że użytkownik wyraźnie poprosi o zapis bez polskich znaków.
+            TON: Bezpośredni, profesjonalny, pewny, ludzki, bez służalczości.
+            JĘZYK: Polski ojczysty. Brak Markdownu. Tylko czysty tekst do sonifikacji.
+        `;
+
+        function escapeHtmlText(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function fenrirSetStatus(text) {
+            coreStatusText.textContent = text;
+        }
+
+        function fenrirSetDataText(text) {
+            if (fenrirDataText) fenrirDataText.textContent = text;
+        }
+
+        function fenrirNormalizeCommandText(text) {
+            return String(text || '')
+                .toLowerCase()
+                .replace(/ł/g, 'l')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[.,!?;:()[\]{}"']/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function fenrirSplitCommandItems(text) {
+            return String(text || '')
+                .split(/\s+(?:i|oraz|plus)\s+|[,;]/i)
+                .map(item => fenrirNormalizeCommandText(item))
+                .filter(Boolean);
+        }
+
+        function fenrirBuildGoogleApiUrl(modelName) {
+            return `${FENRIR_GOOGLE_API_BASE_URL}/${modelName}:generateContent?key=${apiKey}`;
+        }
+
+        async function fenrirCallGoogleContent(modelName, payload) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 90000);
+            let httpResponse;
+            let responseText;
+
+            try {
+                httpResponse = await fetch(fenrirBuildGoogleApiUrl(modelName), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                responseText = await httpResponse.text();
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    throw new Error('Przekroczono czas oczekiwania na Google Gemini API.');
+                }
+                throw new Error(`Nie mozna polaczyc sie z Google Gemini API: ${error.message}`);
+            } finally {
+                clearTimeout(timeoutId);
+            }
+
+            let response;
+            try {
+                response = responseText ? JSON.parse(responseText) : {};
+            } catch (error) {
+                throw new Error(`Google Gemini API zwróciło niepoprawną odpowiedź HTTP ${httpResponse.status}.`);
+            }
+
+            if (!httpResponse.ok || response.error) {
+                const apiMessage = response.error && response.error.message;
+                throw new Error(apiMessage || `Błąd Google Gemini API HTTP ${httpResponse.status}.`);
+            }
+
+            if (!response.candidates || !response.candidates[0] || !response.candidates[0].content) {
+                const blockReason = response.promptFeedback && response.promptFeedback.blockReason;
+                throw new Error(blockReason
+                    ? `Google Gemini zablokowało zapytanie: ${blockReason}.`
+                    : 'Brak poprawnej odpowiedzi z Google Gemini API.');
+            }
+
+            return response;
+        }
+
+        function fenrirExtractGoogleText(response) {
+            const parts = response.candidates?.[0]?.content?.parts || [];
+            const text = parts
+                .filter(part => typeof part.text === 'string' && !part.thought)
+                .map(part => part.text)
+                .join('\n')
+                .trim();
+
+            if (!text) {
+                const finishReason = response.candidates?.[0]?.finishReason || 'BRAK_TEKSTU';
+                throw new Error(`Google Gemini nie zwróciło tekstu. Powód: ${finishReason}.`);
+            }
+
+            return text;
+        }
+
+        async function fenrirCallGoogleGenerateContent(payload) {
+            return fenrirCallGoogleContent(FENRIR_GOOGLE_TEXT_MODEL, payload);
+        }
+
+        async function fenrirCallGoogleTtsContent(payload) {
+            return fenrirCallGoogleContent(FENRIR_GOOGLE_TTS_MODEL, payload);
+        }
+
+        function fenrirNormalizeSessionText(text) {
+            return String(text || '')
+                .replace(/\r\n/g, '\n')
+                .split('\n')
+                .map(line => line.trim().replace(/\s+([,.;:!?])/g, '$1').replace(/\s{2,}/g, ' '))
+                .join('\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        }
+
+        function fenrirRecordSessionEntry(role, text) {
+            fenrirSessionLog.push({
+                role,
+                text: fenrirNormalizeSessionText(text),
+                timestamp: new Date()
+            });
+        }
+
+        function fenrirAppendUserTurn(text) {
+            const cleanText = String(text || '').trim();
+            if (!cleanText) return;
+
+            addMessage(escapeHtmlText(cleanText), true);
+            chatHistory.push({ role: 'user', parts: [{ text: `[FENRIR] ${cleanText}` }] });
+            fenrirRecordSessionEntry('user', cleanText);
+        }
+
+        function fenrirAppendAssistantTurn(text, persistInMainHistory = true) {
+            const cleanText = String(text || '').trim();
+            if (!cleanText) return;
+
+            addMessage(parseMarkdownAndLaTeX(cleanText), false, cleanText);
+            if (persistInMainHistory) {
+                chatHistory.push({ role: 'model', parts: [{ text: cleanText }] });
+            }
+            fenrirRecordSessionEntry('model', cleanText);
+        }
+
+        function fenrirAppendSystemNotice(text) {
+            const cleanText = String(text || '').trim();
+            if (!cleanText) return;
+
+            addMessage(parseMarkdownAndLaTeX(cleanText), false, cleanText);
+            fenrirRecordSessionEntry('system', cleanText);
+        }
+
+        function fenrirIsSaveSessionCommand(query) {
+            const normalized = fenrirNormalizeCommandText(query);
+            return normalized.includes('zapisz sesje') ||
+                   normalized.includes('zapisz rozmowe') ||
+                   normalized.includes('eksportuj sesje') ||
+                   normalized.includes('eksportuj rozmowe');
+        }
+
+        function fenrirIsExtendedConversationOnCommand(query) {
+            const normalized = fenrirNormalizeCommandText(query);
+            return normalized.includes('wlacz tryb rozszerzonej rozmowy') ||
+                   normalized.includes('uruchom tryb rozszerzonej rozmowy') ||
+                   normalized.includes('wlacz tryb ciaglej rozmowy') ||
+                   normalized.includes('uruchom tryb ciaglej rozmowy') ||
+                   normalized.includes('rozmawiaj ze mna ciagle') ||
+                   normalized.includes('tryb rozmowy ciaglej');
+        }
+
+        function fenrirIsExtendedConversationOffCommand(query) {
+            const normalized = fenrirNormalizeCommandText(query);
+            return normalized.includes('wylacz tryb rozszerzonej rozmowy') ||
+                   normalized.includes('zatrzymaj tryb rozszerzonej rozmowy') ||
+                   normalized.includes('wylacz tryb ciaglej rozmowy') ||
+                   normalized.includes('zatrzymaj tryb ciaglej rozmowy') ||
+                   normalized.includes('zatrzymaj nasluch') ||
+                   normalized.includes('przestan sluchac') ||
+                   normalized.includes('koniec rozmowy');
+        }
+
+        function fenrirClearAutoListenTimer() {
+            if (fenrirAutoListenTimer !== null) {
+                clearTimeout(fenrirAutoListenTimer);
+                fenrirAutoListenTimer = null;
+            }
+        }
+
+        function fenrirInitRecognition() {
+            const SpeechRecognitionEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognitionEngine) {
+                logosCoreBtn.title = 'Ta przeglądarka nie obsługuje rozpoznawania mowy.';
+                fenrirSetStatus('BRAK ROZPOZNAWANIA MOWY');
+                return null;
+            }
+
+            fenrirRecognition = new SpeechRecognitionEngine();
+            fenrirRecognition.continuous = true;
+            fenrirRecognition.interimResults = false;
+            fenrirRecognition.lang = 'pl-PL';
+
+            fenrirRecognition.onstart = () => {
+                isFenrirListening = true;
+                logosCoreBtn.classList.add('listening');
+                startVisualizerAnimation();
+                fenrirSetStatus(fenrirExtendedConversationMode ? 'FENRIR: NASŁUCH CIĄGŁY' : 'FENRIR: SŁUCHAM...');
+            };
+
+            fenrirRecognition.onresult = (event) => {
+                if (!isFenrirRuntimeActive || fenrirVoiceProcessing) return;
+
+                const result = event.results[event.resultIndex];
+                if (!result || !result.isFinal) return;
+
+                const query = result[0].transcript;
+                if (query) fenrirProcessLogos(query);
+            };
+
+            fenrirRecognition.onend = () => {
+                isFenrirListening = false;
+                logosCoreBtn.classList.remove('listening');
+                if (!logosCoreBtn.classList.contains('speaking')) {
+                    stopVisualizerAnimation();
+                    fenrirSetStatus(isFenrirRuntimeActive ? 'FENRIR: NASŁUCH' : 'GOTOWY DO ROZMOWY');
+                    fenrirScheduleExtendedListening(FENRIR_LISTEN_AFTER_RESPONSE_DELAY_MS);
+                }
+            };
+
+            fenrirRecognition.onerror = (event) => {
+                isFenrirListening = false;
+                logosCoreBtn.classList.remove('listening');
+                logosCoreBtn.classList.remove('speaking');
+                stopVisualizerAnimation();
+                fenrirSetStatus('FENRIR: MIKROFON NIEDOSTEPNY');
+                logosCoreBtn.title = `Blad mikrofonu FENRIR: ${event.error || 'nieznany'}`;
+                fenrirClearAutoListenTimer();
+            };
+
+            return fenrirRecognition;
+        }
+
+        function fenrirStartListeningSafely() {
+            if (!isFenrirRuntimeActive) return false;
+            if (!fenrirRecognition) fenrirInitRecognition();
+            if (!fenrirRecognition || isFenrirListening || logosCoreBtn.classList.contains('speaking')) return false;
+
+            try {
+                fenrirRecognition.continuous = fenrirExtendedConversationMode;
+                fenrirRecognition.start();
+                return true;
+            } catch (error) {
+                isFenrirListening = false;
+                logosCoreBtn.classList.remove('listening');
+                return false;
+            }
+        }
+
+        function fenrirScheduleExtendedListening(delay = FENRIR_LISTEN_RESTART_DELAY_MS) {
+            fenrirClearAutoListenTimer();
+            if (!isFenrirRuntimeActive || !fenrirExtendedConversationMode || !fenrirRecognition || logosCoreBtn.classList.contains('speaking')) return;
+
+            fenrirAutoListenTimer = setTimeout(() => {
+                fenrirAutoListenTimer = null;
+                fenrirStartListeningSafely();
+            }, delay);
+        }
+
+        function fenrirStopMic() {
+            isFenrirListening = false;
+            logosCoreBtn.classList.remove('listening');
+            fenrirClearAutoListenTimer();
+            if (fenrirRecognition) {
+                try {
+                    fenrirRecognition.stop();
+                } catch (error) {
+                    console.warn('FENRIR stop mic:', error);
+                }
+            }
+        }
+
+        function fenrirStartRuntime() {
+            if (isFenrirRuntimeActive || logosCoreBtn.classList.contains('speaking')) return;
+
+            if (isVoiceModeActive) {
+                stopVoiceRecognition();
+            }
+            if (isAutoloopActive) {
+                isAutoloopActive = false;
+                autoloopBtn.classList.remove('active');
+                autoloopBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16"></path></svg>
+                    <span>Pętla Autonomiczna: OFF</span>
+                `;
+            }
+
+            isFenrirRuntimeActive = true;
+            fenrirExtendedConversationMode = true;
+            logosCoreBtn.classList.add('fenrir-active');
+            logosCoreBtn.title = 'FENRIR aktywny. Kliknij, aby zatrzymać tryb FENRIR.';
+            fenrirSetStatus('FENRIR: START NASŁUCHU...');
+
+            const started = fenrirStartListeningSafely();
+            if (!started && !isFenrirListening) {
+                fenrirSetStatus('FENRIR: ZEZWÓL NA MIKROFON');
+                logosCoreBtn.title = 'Przeglądarka wymaga zgody użytkownika na mikrofon.';
+            }
+        }
+
+        function fenrirStopRuntime() {
+            isFenrirRuntimeActive = false;
+            fenrirExtendedConversationMode = false;
+            fenrirStopMic();
+            if (fenrirActiveAudio) {
+                fenrirActiveAudio.pause();
+                fenrirActiveAudio.currentTime = 0;
+                fenrirActiveAudio = null;
+            }
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            logosCoreBtn.classList.remove('fenrir-active');
+            logosCoreBtn.classList.remove('listening');
+            logosCoreBtn.classList.remove('speaking');
+            stopVisualizerAnimation();
+            logosCoreBtn.title = 'Kliknij, aby uruchomić tryb FENRIR.';
+            fenrirSetStatus('GOTOWY DO ROZMOWY');
+        }
+
+        function fenrirToggleRuntime() {
+            if (isFenrirRuntimeActive) {
+                fenrirStopRuntime();
+            } else {
+                fenrirStartRuntime();
+            }
+        }
+
+        function fenrirSplitTextForSpeech(text, maxChars = 3500) {
+            const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+            const chunks = [];
+            let remaining = normalized;
+
+            while (remaining.length > maxChars) {
+                const windowText = remaining.slice(0, maxChars + 1);
+                const punctuationBreak = Math.max(
+                    windowText.lastIndexOf('. '),
+                    windowText.lastIndexOf('! '),
+                    windowText.lastIndexOf('? ')
+                );
+                const whitespaceBreak = windowText.lastIndexOf(' ');
+                const splitAt = punctuationBreak >= Math.floor(maxChars * 0.55)
+                    ? punctuationBreak + 1
+                    : whitespaceBreak > 0 ? whitespaceBreak : maxChars;
+
+                chunks.push(remaining.slice(0, splitAt).trim());
+                remaining = remaining.slice(splitAt).trim();
+            }
+
+            if (remaining) chunks.push(remaining);
+            return chunks;
+        }
+
+        function fenrirBuildAudioBlob(inlineData) {
+            const mimeType = String(inlineData.mimeType || 'audio/L16;codec=pcm;rate=24000');
+            const binary = atob(inlineData.data);
+            const audioBytes = new Uint8Array(binary.length);
+
+            for (let index = 0; index < binary.length; index++) {
+                audioBytes[index] = binary.charCodeAt(index);
+            }
+
+            if (!/pcm|l16/i.test(mimeType)) {
+                return new Blob([audioBytes], { type: mimeType.split(';')[0] || 'audio/wav' });
+            }
+
+            const rateMatch = mimeType.match(/rate=(\d+)/i);
+            const sampleRate = rateMatch ? Number(rateMatch[1]) : 24000;
+            const channels = 1;
+            const bytesPerSample = 2;
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+
+            view.setUint32(0, 0x52494646, false);
+            view.setUint32(4, 36 + audioBytes.length, true);
+            view.setUint32(8, 0x57415645, false);
+            view.setUint32(12, 0x666d7420, false);
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, channels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * channels * bytesPerSample, true);
+            view.setUint16(32, channels * bytesPerSample, true);
+            view.setUint16(34, bytesPerSample * 8, true);
+            view.setUint32(36, 0x64617461, false);
+            view.setUint32(40, audioBytes.length, true);
+
+            return new Blob([wavHeader, audioBytes], { type: 'audio/wav' });
+        }
+
+        function fenrirPlayAudioBlob(blob) {
+            return new Promise((resolve, reject) => {
+                const audioUrl = URL.createObjectURL(blob);
+                const audio = new Audio(audioUrl);
+                let settled = false;
+                fenrirActiveAudio = audio;
+
+                const finish = (error) => {
+                    if (settled) return;
+                    settled = true;
+                    if (fenrirActiveAudio === audio) fenrirActiveAudio = null;
+                    URL.revokeObjectURL(audioUrl);
+                    if (error) reject(error);
+                    else resolve();
+                };
+
+                audio.onended = () => finish();
+                audio.onerror = () => finish(new Error('Przegladarka nie odtworzyla danych audio.'));
+
+                const playPromise = audio.play();
+                if (playPromise) playPromise.catch(finish);
+            });
+        }
+
+        function fenrirSpeakWithBrowserVoice(text) {
+            return new Promise((resolve, reject) => {
+                if (!('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) {
+                    reject(new Error('Przegladarka nie obsluguje awaryjnej syntezy mowy.'));
+                    return;
+                }
+
+                const utterance = new SpeechSynthesisUtterance(String(text || '').slice(0, 6000));
+                utterance.lang = 'pl-PL';
+                utterance.rate = 0.95;
+                utterance.pitch = 0.9;
+                utterance.volume = 1;
+                utterance.onend = () => resolve();
+                utterance.onerror = () => reject(new Error('Awaryjna synteza mowy nie odtworzyla tekstu.'));
+
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        async function fenrirEmitLogos(text) {
+            const cleanText = String(text || '').trim();
+            if (!cleanText) return;
+
+            fenrirAppendAssistantTurn(cleanText);
+            fenrirSetStatus('FENRIR: MÓWIĘ...');
+            logosCoreBtn.classList.add('speaking');
+            startVisualizerAnimation();
+
+            try {
+                const speechChunks = fenrirSplitTextForSpeech(cleanText);
+
+                for (const speechChunk of speechChunks) {
+                    if (!isFenrirRuntimeActive) break;
+
+                    const payload = {
+                        contents: [{ parts: [{ text: `Mów po polsku naturalnie, zdecydowanie i wyraźnie. Zachowaj sens, polską interpunkcję oraz polskie znaki diakrytyczne: ${speechChunk}` }] }],
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: {
+                                voiceConfig: {
+                                    prebuiltVoiceConfig: {
+                                        voiceName: "Fenrir"
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    const response = await fenrirCallGoogleTtsContent(payload);
+                    const audioPart = response.candidates[0].content.parts.find(part =>
+                        part.inlineData && part.inlineData.data
+                    );
+
+                    if (!audioPart) {
+                        throw new Error('Brak danych audio w odpowiedzi Google Gemini TTS.');
+                    }
+
+                    await fenrirPlayAudioBlob(fenrirBuildAudioBlob(audioPart.inlineData));
+                }
+
+                logosCoreBtn.classList.remove('speaking');
+                stopVisualizerAnimation();
+                fenrirSetStatus(isFenrirRuntimeActive ? 'FENRIR: GOTOWY' : 'GOTOWY DO ROZMOWY');
+                fenrirScheduleExtendedListening(FENRIR_LISTEN_AFTER_RESPONSE_DELAY_MS);
+            } catch (error) {
+                console.warn('FENRIR audio niedostępne:', error);
+
+                try {
+                    fenrirSetStatus('FENRIR: AWARYJNY GŁOS');
+                    await fenrirSpeakWithBrowserVoice(cleanText);
+                } catch (fallbackError) {
+                    fenrirSetStatus('FENRIR: ODPOWIEDŹ BEZ AUDIO');
+                    coreStatusText.title = fallbackError.message || error.message || 'Audio niedostępne.';
+                    console.warn('FENRIR awaryjny głos niedostępny:', fallbackError);
+                } finally {
+                    logosCoreBtn.classList.remove('speaking');
+                    stopVisualizerAnimation();
+                    setTimeout(() => {
+                        if (isFenrirRuntimeActive) {
+                            fenrirSetStatus('FENRIR: GOTOWY');
+                            fenrirScheduleExtendedListening(FENRIR_LISTEN_AFTER_RESPONSE_DELAY_MS);
+                        } else {
+                            fenrirSetStatus('GOTOWY DO ROZMOWY');
+                        }
+                    }, 700);
+                }
+            }
+        }
+
+        function fenrirBuildFileTimestamp(date = new Date()) {
+            const pad = value => String(value).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${Date.now()}`;
+        }
+
+        function fenrirBuildRealtimeContext() {
+            const now = new Date();
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+            const localDateTime = new Intl.DateTimeFormat('pl-PL', {
+                dateStyle: 'full',
+                timeStyle: 'long',
+                timeZone
+            }).format(now);
+
+            return `
+                ORIENTACJA CZASU I PRZESTRZENI:
+                - Aktualna chwila UTC: ${now.toISOString()}.
+                - Aktualna data i czas użytkownika: ${localDateTime}.
+                - Strefa czasowa użytkownika: ${timeZone}.
+                - Gdy pytanie dotyczy informacji bieżących, zmiennych lub wymagających weryfikacji, korzystaj z Google Search.
+            `;
+        }
+
+        function fenrirGetFileExtension(path) {
+            const cleanPath = String(path || '').toLowerCase().split('?')[0].split('#')[0];
+            const dotIndex = cleanPath.lastIndexOf('.');
+            return dotIndex >= 0 ? cleanPath.slice(dotIndex) : '';
+        }
+
+        function fenrirIsZipFile(fileName) {
+            return fenrirGetFileExtension(fileName) === '.zip';
+        }
+
+        function fenrirIsProbablyTextPath(path, type = '') {
+            const extension = fenrirGetFileExtension(path);
+            const mime = String(type || '').toLowerCase();
+
+            if (FENRIR_TEXT_EXTENSIONS.includes(extension)) return true;
+            if (FENRIR_BINARY_EXTENSIONS.includes(extension)) return false;
+            if (mime.startsWith('text/')) return true;
+            if (mime.includes('json') || mime.includes('xml') || mime.includes('yaml')) return true;
+
+            return false;
+        }
+
+        function fenrirShouldTryReadAsText(file, path) {
+            if (fenrirIsZipFile(path)) return false;
+            if (fenrirIsProbablyTextPath(path, file.type)) return true;
+            if (FENRIR_BINARY_EXTENSIONS.includes(fenrirGetFileExtension(path))) return false;
+
+            return file.size <= 2 * 1024 * 1024;
+        }
+
+        function fenrirLooksReadableText(text) {
+            const sample = String(text || '').slice(0, 5000);
+            if (!sample.trim()) return false;
+
+            const replacementMarks = (sample.match(/\uFFFD/g) || []).length;
+            const controlMarks = (sample.match(/[\x00-\x08\x0E-\x1F]/g) || []).length;
+
+            return replacementMarks / sample.length < 0.03 &&
+                   controlMarks / sample.length < 0.03;
+        }
+
+        function fenrirNormalizeKnowledgeText(text) {
+            return String(text)
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/\u0000/g, '')
+                .trim();
+        }
+
+        function fenrirAddKnowledgeFile(path, text, source = 'plik') {
+            const normalizedText = fenrirNormalizeKnowledgeText(text);
+            const existingIndex = fenrirKnowledgeFiles.findIndex(file => file.path === path && file.source === source);
+            const existingChars = existingIndex >= 0 ? fenrirKnowledgeFiles[existingIndex].chars : 0;
+            const availableChars = FENRIR_MAX_KNOWLEDGE_CHARS - fenrirKnowledgeTotalChars + existingChars;
+
+            if (!normalizedText || availableChars <= 0) return false;
+
+            const limit = Math.min(FENRIR_MAX_SINGLE_FILE_CHARS, availableChars);
+            const clippedText = normalizedText.slice(0, limit);
+            const knowledgeFile = {
+                path,
+                source,
+                text: clippedText,
+                chars: clippedText.length,
+                originalChars: normalizedText.length,
+                truncated: clippedText.length < normalizedText.length,
+                timestamp: new Date()
+            };
+
+            if (existingIndex >= 0) fenrirKnowledgeFiles[existingIndex] = knowledgeFile;
+            else fenrirKnowledgeFiles.push(knowledgeFile);
+
+            fenrirKnowledgeTotalChars = fenrirKnowledgeTotalChars - existingChars + clippedText.length;
+            return true;
+        }
+
+        function fenrirBuildKnowledgeContext() {
+            if (fenrirKnowledgeFiles.length === 0) return '';
+
+            const files = fenrirKnowledgeFiles.map((file, index) => {
+                const truncatedInfo = file.truncated ? `, przycięto z ${file.originalChars} znaków` : '';
+                return [
+                    `### PLIK ${index + 1}: ${file.path}`,
+                    `Źródło: ${file.source}; rozmiar w kontekście: ${file.chars} znaków${truncatedInfo}.`,
+                    file.text
+                ].join('\n');
+            }).join('\n\n');
+
+            return `
+                WIEDZA Z PLIKÓW WCZYTANYCH PRZEZ FENRIR:
+                - Masz aktywny kontekst z ${fenrirKnowledgeFiles.length} plików, łącznie ${fenrirKnowledgeTotalChars} znaków.
+                - Gdy pytanie dotyczy załadowanych plików, korzystaj z tej wiedzy w pierwszej kolejności.
+                - Jeżeli treść pliku jest niepełna przez limit kontekstu, powiedz to wprost.
+
+                ${files}
+            `;
+        }
+
+        async function fenrirReadTextLikeFile(file, path) {
+            if (!fenrirShouldTryReadAsText(file, path)) return false;
+
+            const text = await file.text();
+            if (!fenrirLooksReadableText(text)) return false;
+
+            return fenrirAddKnowledgeFile(path, text, 'plik');
+        }
+
+        async function fenrirReadZipFile(file, path) {
+            if (!window.JSZip) {
+                throw new Error('JSZip nie jest dostępny. Nie można odczytać archiwum ZIP.');
+            }
+
+            const zip = await JSZip.loadAsync(file);
+            const entries = Object.values(zip.files).filter(entry => !entry.dir);
+            let loaded = 0;
+
+            for (const entry of entries) {
+                if (fenrirKnowledgeTotalChars >= FENRIR_MAX_KNOWLEDGE_CHARS) break;
+                if (!fenrirIsProbablyTextPath(entry.name)) continue;
+
+                const text = await entry.async('text');
+                if (!fenrirLooksReadableText(text)) continue;
+
+                if (fenrirAddKnowledgeFile(`${path}/${entry.name}`, text, 'zip')) loaded++;
+            }
+
+            return loaded;
+        }
+
+        async function fenrirReadDirectoryEntries(directoryReader) {
+            const entries = [];
+
+            while (true) {
+                const batch = await new Promise((resolve, reject) => {
+                    directoryReader.readEntries(resolve, reject);
+                });
+
+                if (!batch.length) break;
+                entries.push(...batch);
+            }
+
+            return entries;
+        }
+
+        async function fenrirCollectEntryFiles(entry, parentPath = '') {
+            const currentPath = parentPath ? `${parentPath}/${entry.name}` : entry.name;
+
+            if (entry.isFile) {
+                const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+                return [{ file, path: currentPath }];
+            }
+
+            if (entry.isDirectory) {
+                const reader = entry.createReader();
+                const entries = await fenrirReadDirectoryEntries(reader);
+                const nestedFiles = [];
+
+                for (const nestedEntry of entries) {
+                    nestedFiles.push(...await fenrirCollectEntryFiles(nestedEntry, currentPath));
+                }
+
+                return nestedFiles;
+            }
+
+            return [];
+        }
+
+        async function fenrirCollectDroppedFiles(dataTransfer) {
+            const items = Array.from(dataTransfer.items || []);
+            const files = [];
+
+            if (items.length && items.some(item => typeof item.webkitGetAsEntry === 'function')) {
+                for (const item of items) {
+                    if (item.kind !== 'file') continue;
+
+                    const entry = item.webkitGetAsEntry();
+                    if (!entry) continue;
+
+                    files.push(...await fenrirCollectEntryFiles(entry));
+                }
+            }
+
+            if (files.length > 0) return files;
+
+            return Array.from(dataTransfer.files || []).map(file => ({
+                file,
+                path: file.webkitRelativePath || file.name
+            }));
+        }
+
+        function fenrirBuildBrowserFolderIndex(files) {
+            const folderPaths = new Set();
+            fenrirBrowserFileRegistry = new Map();
+
+            const indexedFiles = files.map(({ file, path }) => {
+                const normalizedPath = String(path || file.name).replace(/\\/g, '/');
+                const pathParts = normalizedPath.split('/').filter(Boolean);
+
+                for (let index = 1; index < pathParts.length; index++) {
+                    folderPaths.add(pathParts.slice(0, index).join('/'));
+                }
+
+                fenrirBrowserFileRegistry.set(normalizedPath, file);
+
+                return {
+                    name: file.name,
+                    path: normalizedPath,
+                    depth: Math.max(0, pathParts.length - 1),
+                    size: file.size,
+                    type: file.type || '',
+                    extension: fenrirGetFileExtension(file.name),
+                    readable: fenrirIsProbablyTextPath(file.name, file.type),
+                    modifiedAt: file.lastModified ? new Date(file.lastModified).toISOString() : null
+                };
+            });
+
+            const folders = Array.from(folderPaths)
+                .sort((left, right) => left.localeCompare(right, 'pl'))
+                .map(path => {
+                    const parts = path.split('/');
+                    return {
+                        name: parts[parts.length - 1],
+                        path,
+                        depth: Math.max(0, parts.length - 1)
+                    };
+                });
+
+            const roots = new Set(indexedFiles.map(file => file.path.split('/')[0]).filter(Boolean));
+            fenrirExternalDiskIndex = {
+                updatedAt: new Date().toISOString(),
+                indexedRoot: roots.size === 1 ? Array.from(roots)[0] : 'WYBRANY_FOLDER',
+                folders,
+                files: indexedFiles
+            };
+
+            fenrirBrowserFolderReadMode = true;
+            fenrirExternalDiskHandle = null;
+            fenrirExternalCoreHandle = null;
+            fenrirExternalOutputHandle = null;
+            fenrirActiveWriteSession = null;
+        }
+
+        async function fenrirIngestBrowserSelectedFiles(fileList) {
+            const files = Array.from(fileList || []).map(file => ({
+                file,
+                path: file.webkitRelativePath || file.name
+            }));
+
+            if (!files.length) return;
+
+            fenrirBuildBrowserFolderIndex(files);
+
+            let loadedFiles = 0;
+            let skippedFiles = 0;
+            fenrirSetStatus('FENRIR: CZYTAM FOLDER...');
+
+            for (const item of files) {
+                try {
+                    if (fenrirKnowledgeTotalChars >= FENRIR_MAX_KNOWLEDGE_CHARS) {
+                        skippedFiles++;
+                        continue;
+                    }
+
+                    if (fenrirIsZipFile(item.path)) {
+                        const loadedFromZip = await fenrirReadZipFile(item.file, item.path);
+                        loadedFiles += loadedFromZip;
+                        if (loadedFromZip === 0) skippedFiles++;
+                    } else if (await fenrirReadTextLikeFile(item.file, item.path)) {
+                        loadedFiles++;
+                    } else {
+                        skippedFiles++;
+                    }
+                } catch (error) {
+                    skippedFiles++;
+                }
+            }
+
+            const summary = `FENRIR: Załadowano ${loadedFiles} plików przez wybór folderu. Pominięto ${skippedFiles}. Aktywny kontekst: ${fenrirKnowledgeTotalChars} znaków.`;
+            fenrirSetStatus(loadedFiles > 0 ? 'FENRIR: FOLDER WCZYTANY' : 'FENRIR: BRAK TEKSTU');
+            fenrirDataBtn.classList.toggle('active', loadedFiles > 0);
+            fenrirSetDataText(loadedFiles > 0
+                ? `Dysk FENRIR: ${fenrirExternalDiskIndex.indexedRoot}`
+                : 'Dysk FENRIR: Brak tekstu');
+            fenrirAppendSystemNotice(summary);
+
+            setTimeout(() => {
+                if (!isFenrirRuntimeActive) fenrirSetStatus('GOTOWY DO ROZMOWY');
+            }, 1800);
+        }
+
+        async function fenrirIngestDroppedFiles(dataTransfer) {
+            const droppedFiles = await fenrirCollectDroppedFiles(dataTransfer);
+            let loadedFiles = 0;
+            let skippedFiles = 0;
+
+            fenrirSetStatus('FENRIR: CZYTAM PLIKI...');
+
+            for (const item of droppedFiles) {
+                try {
+                    if (fenrirKnowledgeTotalChars >= FENRIR_MAX_KNOWLEDGE_CHARS) {
+                        skippedFiles++;
+                        continue;
+                    }
+
+                    if (fenrirIsZipFile(item.path)) {
+                        const loadedFromZip = await fenrirReadZipFile(item.file, item.path);
+                        loadedFiles += loadedFromZip;
+                        if (loadedFromZip === 0) skippedFiles++;
+                    } else if (await fenrirReadTextLikeFile(item.file, item.path)) {
+                        loadedFiles++;
+                    } else {
+                        skippedFiles++;
+                    }
+                } catch (error) {
+                    skippedFiles++;
+                }
+            }
+
+            const summary = `FENRIR: Załadowano ${loadedFiles} plików do pamięci. Pominięto ${skippedFiles}. Aktywny kontekst: ${fenrirKnowledgeTotalChars} znaków.`;
+            fenrirSetStatus(loadedFiles > 0 ? 'FENRIR: PLIKI ZAŁADOWANE' : 'FENRIR: BRAK TEKSTU');
+            fenrirAppendSystemNotice(summary);
+
+            setTimeout(() => {
+                if (isFenrirRuntimeActive) fenrirSetStatus('FENRIR: GOTOWY');
+                else fenrirSetStatus('GOTOWY DO ROZMOWY');
+            }, 1800);
+        }
+
+        function fenrirBuildCoreFileContent(fileName) {
+            const now = new Date().toISOString();
+
+            if (fileName === FENRIR_CORE_FILES.manifest) {
+                return JSON.stringify({
+                    system: 'FENRIR',
+                    coreFolder: FENRIR_CORE_FOLDER,
+                    outputFolder: FENRIR_OUTPUT_FOLDER,
+                    createdAt: now,
+                    purpose: 'Zewnętrzny dysk danych, rdzeń pracy z danymi i przestrzeń tworzenia plików.',
+                    writeCapabilities: [
+                        'tworzenie plików txt',
+                        'tworzenie plików md',
+                        'tworzenie plików html',
+                        'dopisywanie długiego kodu html w wielu częściach'
+                    ],
+                    files: FENRIR_CORE_FILES
+                }, null, 2);
+            }
+
+            if (fileName === FENRIR_CORE_FILES.structure) {
+                return JSON.stringify({
+                    updatedAt: now,
+                    indexedRoot: fenrirExternalDiskHandle ? fenrirExternalDiskHandle.name : null,
+                    folders: [],
+                    files: [],
+                    note: 'Plik przygotowany pod szybki indeks dysku pamięci.'
+                }, null, 2);
+            }
+
+            return JSON.stringify({
+                createdAt: now,
+                updatedAt: now,
+                entries: []
+            }, null, 2);
+        }
+
+        async function fenrirEnsureExternalCoreFiles(coreHandle) {
+            fenrirExternalOutputHandle = await coreHandle.getDirectoryHandle(FENRIR_OUTPUT_FOLDER, { create: true });
+
+            for (const fileName of Object.values(FENRIR_CORE_FILES)) {
+                const fileHandle = await coreHandle.getFileHandle(fileName, { create: true });
+                const file = await fileHandle.getFile();
+
+                if (file.size === 0) {
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(fenrirBuildCoreFileContent(fileName));
+                    await writable.close();
+                }
+            }
+        }
+
+        async function fenrirWriteExternalCoreJson(fileName, data) {
+            if (!fenrirExternalCoreHandle) return false;
+
+            const fileHandle = await fenrirExternalCoreHandle.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(data, null, 2));
+            await writable.close();
+            return true;
+        }
+
+        async function fenrirScanExternalDirectory(directoryHandle) {
+            const folders = [];
+            const files = [];
+            const queue = [{ handle: directoryHandle, path: '', depth: 0 }];
+            let scanErrors = 0;
+            let processedEntries = 0;
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                try {
+                    for await (const [name, handle] of current.handle.entries()) {
+                        if (!current.path && name === FENRIR_CORE_FOLDER) continue;
+
+                        const path = current.path ? `${current.path}/${name}` : name;
+
+                        if (handle.kind === 'directory') {
+                            folders.push({ name, path, depth: current.depth });
+                            queue.push({ handle, path, depth: current.depth + 1 });
+                        } else if (handle.kind === 'file') {
+                            try {
+                                const file = await handle.getFile();
+                                files.push({
+                                    name,
+                                    path,
+                                    depth: current.depth,
+                                    size: file.size,
+                                    type: file.type || '',
+                                    extension: fenrirGetFileExtension(name),
+                                    readable: fenrirIsProbablyTextPath(name, file.type),
+                                    modifiedAt: file.lastModified ? new Date(file.lastModified).toISOString() : null
+                                });
+                            } catch (error) {
+                                scanErrors++;
+                            }
+                        }
+
+                        processedEntries++;
+                        if (processedEntries % 200 === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
+                    }
+                } catch (error) {
+                    scanErrors++;
+                }
+            }
+
+            return { folders, files, scanErrors };
+        }
+
+        async function fenrirRebuildExternalDiskIndex() {
+            if (!fenrirExternalDiskHandle) {
+                throw new Error('Brak podłączonego dysku danych.');
+            }
+
+            fenrirSetStatus('FENRIR: INDEKSUJE DYSK...');
+            const scan = await fenrirScanExternalDirectory(fenrirExternalDiskHandle);
+            fenrirExternalDiskIndex = {
+                updatedAt: new Date().toISOString(),
+                indexedRoot: fenrirExternalDiskHandle.name,
+                folders: scan.folders,
+                files: scan.files,
+                scanErrors: scan.scanErrors
+            };
+
+            await fenrirWriteExternalCoreJson(FENRIR_CORE_FILES.structure, fenrirExternalDiskIndex);
+            fenrirRecordSessionEntry('system', `Zindeksowano dysk ${fenrirExternalDiskHandle.name}: ${scan.files.length} plików, ${scan.folders.length} folderów.`);
+            fenrirSetStatus('FENRIR: INDEKS GOTOWY');
+            fenrirSetDataText(`Dysk FENRIR: ${fenrirExternalDiskHandle.name} / ${scan.files.length}`);
+
+            setTimeout(() => {
+                if (isFenrirRuntimeActive) fenrirSetStatus('FENRIR: GOTOWY');
+                else fenrirSetStatus('GOTOWY DO ROZMOWY');
+            }, 1800);
+
+            return fenrirExternalDiskIndex;
+        }
+
+        async function fenrirGetHandleByPath(rootHandle, path) {
+            const parts = String(path || '').split('/').filter(Boolean);
+            let handle = rootHandle;
+
+            for (let index = 0; index < parts.length; index++) {
+                const part = parts[index];
+                const isLast = index === parts.length - 1;
+                handle = isLast
+                    ? await handle.getFileHandle(part)
+                    : await handle.getDirectoryHandle(part);
+            }
+
+            return handle;
+        }
+
+        function fenrirFindExternalFilesByName(nameQuery) {
+            const normalizedQuery = fenrirNormalizeCommandText(nameQuery);
+            if (!normalizedQuery) return [];
+
+            return fenrirExternalDiskIndex.files.filter(file => {
+                const normalizedName = fenrirNormalizeCommandText(file.name);
+                const normalizedPath = fenrirNormalizeCommandText(file.path);
+                return normalizedName.includes(normalizedQuery) || normalizedPath.includes(normalizedQuery);
+            });
+        }
+
+        function fenrirFindExternalFilesByFolder(folderQuery) {
+            const normalizedQuery = fenrirNormalizeCommandText(folderQuery);
+            if (!normalizedQuery) return [];
+
+            const folders = fenrirExternalDiskIndex.folders.filter(folder =>
+                fenrirNormalizeCommandText(folder.path).includes(normalizedQuery)
+            );
+
+            return fenrirExternalDiskIndex.files.filter(file =>
+                folders.some(folder => file.path.startsWith(`${folder.path}/`))
+            );
+        }
+
+        async function fenrirReadExternalIndexedFile(indexEntry) {
+            if (!indexEntry || !indexEntry.readable) return false;
+
+            let file;
+            if (fenrirExternalDiskHandle) {
+                const fileHandle = await fenrirGetHandleByPath(fenrirExternalDiskHandle, indexEntry.path);
+                file = await fileHandle.getFile();
+            } else {
+                file = fenrirBrowserFileRegistry.get(indexEntry.path);
+            }
+
+            if (!file) return false;
+
+            const text = await file.text();
+            if (!fenrirLooksReadableText(text)) return false;
+
+            return fenrirAddKnowledgeFile(indexEntry.path, text, 'dysk zewnetrzny');
+        }
+
+        async function fenrirReadExternalFiles(entries, limit = 500) {
+            let loaded = 0;
+            let skipped = 0;
+            const uniqueEntries = [];
+            const seenPaths = new Set();
+
+            for (const entry of entries) {
+                if (!seenPaths.has(entry.path)) {
+                    seenPaths.add(entry.path);
+                    uniqueEntries.push(entry);
+                }
+            }
+
+            const maxEntries = Math.min(uniqueEntries.length, Number.isFinite(limit) ? limit : uniqueEntries.length);
+            skipped += uniqueEntries.length - maxEntries;
+
+            for (let index = 0; index < maxEntries; index++) {
+                if (fenrirKnowledgeTotalChars >= FENRIR_MAX_KNOWLEDGE_CHARS) {
+                    skipped += maxEntries - index;
+                    break;
+                }
+
+                const entry = uniqueEntries[index];
+                try {
+                    if (await fenrirReadExternalIndexedFile(entry)) loaded++;
+                    else skipped++;
+                } catch (error) {
+                    skipped++;
+                }
+            }
+
+            return { loaded, skipped, considered: uniqueEntries.length };
+        }
+
+        function fenrirSanitizeCreatedFileName(name, extension) {
+            const safeExtension = ['.txt', '.md', '.html'].includes(extension) ? extension : '.txt';
+            const baseName = String(name || `fenrir_${fenrirBuildFileTimestamp()}`)
+                .trim()
+                .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+                .replace(/\s+/g, '_')
+                .replace(/\.+$/g, '')
+                .slice(0, 120) || `fenrir_${fenrirBuildFileTimestamp()}`;
+
+            return baseName.toLowerCase().endsWith(safeExtension) ? baseName : `${baseName}${safeExtension}`;
+        }
+
+        function fenrirExtractFileExtensionFromCommand(command) {
+            if (command.includes(' html')) return '.html';
+            if (command.includes(' markdown') || command.includes(' md')) return '.md';
+            if (command.includes(' txt') || command.includes(' tekst')) return '.txt';
+            return '.txt';
+        }
+
+        function fenrirCleanCommandFileName(name) {
+            return String(name || '')
+                .replace(/^(?:plik|nazwa|html|txt|tekst|markdown|md)\s+/i, '')
+                .replace(/\s+(?:html|txt|tekst|markdown|md)$/i, '')
+                .trim();
+        }
+
+        async function fenrirEnsureExternalOutputReady() {
+            if (!fenrirExternalCoreHandle) return false;
+            if (!fenrirExternalOutputHandle) {
+                fenrirExternalOutputHandle = await fenrirExternalCoreHandle.getDirectoryHandle(FENRIR_OUTPUT_FOLDER, { create: true });
+            }
+            return true;
+        }
+
+        async function fenrirWriteCreatedFile(fileName, content, append = false) {
+            if (!await fenrirEnsureExternalOutputReady()) {
+                throw new Error('Brak folderu tworzenia plików.');
+            }
+
+            const fileHandle = await fenrirExternalOutputHandle.getFileHandle(fileName, { create: true });
+            const finalContent = String(content || '');
+
+            if (append) {
+                const file = await fileHandle.getFile();
+                const writable = await fileHandle.createWritable({ keepExistingData: true });
+                await writable.seek(file.size);
+                await writable.write(file.size > 0 ? `\n${finalContent}` : finalContent);
+                await writable.close();
+                return fileName;
+            }
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(finalContent);
+            await writable.close();
+            return fileName;
+        }
+
+        async function fenrirReadCreatedFileTail(fileName, maxBytes = 40000) {
+            if (!await fenrirEnsureExternalOutputReady()) return '';
+
+            const fileHandle = await fenrirExternalOutputHandle.getFileHandle(fileName);
+            const file = await fileHandle.getFile();
+            const start = Math.max(0, file.size - maxBytes);
+            return file.slice(start).text();
+        }
+
+        function fenrirStripCodeFences(text) {
+            return String(text || '')
+                .replace(/^```(?:html|markdown|md|txt|javascript|js|css)?\s*/i, '')
+                .replace(/\s*```$/i, '')
+                .trim();
+        }
+
+        async function fenrirGenerateFileContent(prompt, extension, partMode = false, existingTail = '') {
+            const instruction = extension === '.html'
+                ? partMode
+                    ? existingTail
+                        ? 'Kontynuuj istniejący plik HTML dokładnie od miejsca zakończenia. Zwróć wyłącznie nowy kod do dopisania. Nie powtarzaj DOCTYPE, html, head, body ani przekazanego fragmentu. Nie opisuj procesu. Wszystkie treści użytkowe w języku polskim zapisuj pełną polszczyzną z polskimi znakami diakrytycznymi.'
+                        : 'To jest pierwsza część dużego pliku HTML. Zacznij od poprawnego DOCTYPE i początku dokumentu. Zwróć wyłącznie kod tej części, bez opisu procesu i bez ogrodzeń Markdown. Wszystkie treści użytkowe w języku polskim zapisuj pełną polszczyzną z polskimi znakami diakrytycznymi.'
+                    : 'Wygeneruj kompletny, poprawny i samodzielny dokument HTML. Zwróć wyłącznie kod bez ogrodzeń Markdown. Wszystkie treści użytkowe w języku polskim zapisuj pełną polszczyzną z polskimi znakami diakrytycznymi.'
+                : 'Wygeneruj treść pliku zgodną z poleceniem. Bez markdownowych ogrodzeń kodu, chyba że plik jest Markdownem. Jeżeli tworzysz tekst po polsku, używaj polskich znaków diakrytycznych.';
+
+            const response = await fenrirCallGoogleGenerateContent({
+                contents: [{
+                    role: 'user',
+                    parts: [{
+                        text: `${instruction}\nFormat pliku: ${extension}\nTryb częściowy: ${partMode ? 'tak' : 'nie'}\nPolecenie: ${prompt}${existingTail ? `\n\nOSTATNI FRAGMENT ISTNIEJĄCEGO PLIKU:\n${existingTail}` : ''}`
+                    }]
+                }],
+                generationConfig: {
+                    maxOutputTokens: 8192,
+                    temperature: 0.35,
+                    topP: 0.9
+                }
+            });
+
+            return fenrirStripCodeFences(fenrirExtractGoogleText(response));
+        }
+
+        async function fenrirStartHtmlWriteSession(fileName, description = '') {
+            const safeFileName = fenrirSanitizeCreatedFileName(fileName, '.html');
+            await fenrirWriteCreatedFile(safeFileName, '', false);
+
+            fenrirActiveWriteSession = {
+                fileName: safeFileName,
+                extension: '.html',
+                description,
+                parts: 0,
+                startedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            await fenrirSaveLearningEntry('learning', `Rozpoczęto wieloczęściowe pisanie HTML: ${safeFileName}. Opis: ${description || 'brak'}`);
+            return fenrirActiveWriteSession;
+        }
+
+        async function fenrirAppendHtmlWritePart(text, generate = false) {
+            if (!fenrirActiveWriteSession) {
+                throw new Error('Brak aktywnego pliku HTML do dopisywania.');
+            }
+
+            const existingTail = generate
+                ? await fenrirReadCreatedFileTail(fenrirActiveWriteSession.fileName)
+                : '';
+            const content = generate
+                ? await fenrirGenerateFileContent(`${fenrirActiveWriteSession.description}\nNastępna część: ${text}`, '.html', true, existingTail)
+                : text;
+
+            await fenrirWriteCreatedFile(fenrirActiveWriteSession.fileName, content, true);
+            fenrirActiveWriteSession.parts++;
+            fenrirActiveWriteSession.updatedAt = new Date().toISOString();
+
+            return {
+                fileName: fenrirActiveWriteSession.fileName,
+                parts: fenrirActiveWriteSession.parts
+            };
+        }
+
+        async function fenrirSaveLearningEntry(kind, text) {
+            if (!fenrirExternalCoreHandle) return false;
+
+            const fileName = kind === 'correction' ? FENRIR_CORE_FILES.corrections : FENRIR_CORE_FILES.learning;
+            const fileHandle = await fenrirExternalCoreHandle.getFileHandle(fileName, { create: true });
+            const file = await fileHandle.getFile();
+            let data = { entries: [] };
+
+            try {
+                data = JSON.parse(await file.text());
+            } catch (error) {
+                data = { entries: [] };
+            }
+
+            data.updatedAt = new Date().toISOString();
+            data.entries = Array.isArray(data.entries) ? data.entries : [];
+            data.entries.push({
+                timestamp: new Date().toISOString(),
+                text
+            });
+
+            await fenrirWriteExternalCoreJson(fileName, data);
+            return true;
+        }
+
+        async function fenrirEnsureExternalDiskReady() {
+            if (!fenrirExternalDiskHandle) {
+                if (fenrirBrowserFolderReadMode && fenrirExternalDiskIndex.updatedAt) return true;
+
+                await fenrirEmitLogos('Najpierw podłącz zewnętrzny dysk danych przyciskiem Dysk FENRIR.');
+                return false;
+            }
+
+            const permission = await fenrirExternalDiskHandle.queryPermission({ mode: 'readwrite' });
+            if (permission !== 'granted') {
+                const requested = await fenrirExternalDiskHandle.requestPermission({ mode: 'readwrite' });
+                if (requested !== 'granted') {
+                    await fenrirEmitLogos('Nie mam zgody na odczyt i zapis na dysku danych.');
+                    return false;
+                }
+            }
+
+            if (!fenrirExternalDiskIndex.updatedAt) await fenrirRebuildExternalDiskIndex();
+            return true;
+        }
+
+        async function fenrirHandleExternalDiskCommand(query) {
+            const command = fenrirNormalizeCommandText(query);
+            const isWriteCommand = command.includes('naucz sie') ||
+                                   command.includes('zapamietaj') ||
+                                   command.includes('poprawka') ||
+                                   command.includes('utworz plik') ||
+                                   command.includes('stworz plik') ||
+                                   command.includes('napisz plik') ||
+                                   command.includes('napisz kod') ||
+                                   command.includes('zacznij pisac') ||
+                                   command.includes('zacznij plik') ||
+                                   command.includes('dopisz') ||
+                                   command.includes('zakoncz pisanie') ||
+                                   command.includes('zamknij plik') ||
+                                   command.includes('koniec pisania');
+            const isDiskCommand = command.includes('dysk') ||
+                                  command.includes('nosnik') ||
+                                  command.includes('zewnetrz') ||
+                                  command.includes('indeks') ||
+                                  command.includes('przeczytaj plik') ||
+                                  command.includes('czytaj plik') ||
+                                  command.includes('przeczytaj folder') ||
+                                  command.includes('czytaj folder') ||
+                                  command.includes('przeczytaj wszystko') ||
+                                  command.includes('czytaj wszystko') ||
+                                  command.includes('naucz sie') ||
+                                  command.includes('zapamietaj') ||
+                                  command.includes('poprawka') ||
+                                  command.includes('utworz plik') ||
+                                  command.includes('stworz plik') ||
+                                  command.includes('napisz plik') ||
+                                  command.includes('napisz kod') ||
+                                  command.includes('zacznij pisac') ||
+                                  command.includes('zacznij plik') ||
+                                  command.includes('dopisz') ||
+                                  command.includes('zakoncz pisanie') ||
+                                  command.includes('zamknij plik') ||
+                                  command.includes('koniec pisania');
+
+            if (!isDiskCommand) return false;
+
+            if (command.includes('podlacz')) {
+                await fenrirEmitLogos('Kliknij przycisk Dysk FENRIR i wybierz dysk albo folder. Przeglądarka wymaga bezpośredniego kliknięcia użytkownika.');
+                return true;
+            }
+
+            if (!await fenrirEnsureExternalDiskReady()) return true;
+
+            if (!fenrirExternalDiskHandle && fenrirBrowserFolderReadMode && isWriteCommand) {
+                await fenrirEmitLogos('Ten folder jest podłączony tylko do odczytu. Aby tworzyć pliki i rdzeń FENRIR, otwórz stronę w przeglądarce Chromium z obsługą zapisu i podłącz folder ponownie.');
+                return true;
+            }
+
+            if (command.includes('indeks')) {
+                const index = fenrirExternalDiskHandle
+                    ? await fenrirRebuildExternalDiskIndex()
+                    : fenrirExternalDiskIndex;
+                await fenrirEmitLogos(`Indeks dysku gotowy. Wykryłem ${index.files.length} plików i ${index.folders.length} folderów.`);
+                return true;
+            }
+
+            const endWriteMatch = command.match(/(?:zakoncz pisanie|zamknij plik|koniec pisania)/);
+            if (endWriteMatch) {
+                if (!fenrirActiveWriteSession) {
+                    await fenrirEmitLogos('Nie ma aktywnego pliku HTML w trybie pisania częściami.');
+                    return true;
+                }
+
+                const finishedFile = fenrirActiveWriteSession.fileName;
+                const partCount = fenrirActiveWriteSession.parts;
+                fenrirActiveWriteSession = null;
+                await fenrirRebuildExternalDiskIndex();
+                await fenrirEmitLogos(`Zakończyłem pisanie pliku ${finishedFile}. Zapisano ${partCount} części.`);
+                return true;
+            }
+
+            const startWriteMatch = command.match(/(?:zacznij pisac|zacznij plik|zacznij kod html|napisz kod html w pliku)\s+(.+)/);
+            if (startWriteMatch) {
+                const rawTail = startWriteMatch[1];
+                const nameMatch = rawTail.match(/(?:plik|nazwa)\s+([a-z0-9ąćęłńóśźż._ -]+)/i);
+                const descriptionMatch = query.match(/(?:opis|zadanie|ma byc|ma być)\s+([\s\S]+)/i);
+                const fileName = fenrirCleanCommandFileName(nameMatch ? nameMatch[1] : rawTail.split(/\s+(?:opis|zadanie|ma byc|ma być)\s+/i)[0]);
+                const session = await fenrirStartHtmlWriteSession(fileName, descriptionMatch ? descriptionMatch[1] : query);
+                await fenrirEmitLogos(`Otworzyłem plik ${session.fileName} w folderze ${FENRIR_OUTPUT_FOLDER}. Możesz dyktować kolejne części komendą: dopisz.`);
+                return true;
+            }
+
+            const appendMatch = query.match(/(?:dopisz kod|dopisz|dopisuj)\s+([\s\S]+)/i);
+            if (appendMatch) {
+                if (!fenrirActiveWriteSession) {
+                    await fenrirEmitLogos('Nie ma aktywnego pliku HTML. Najpierw powiedz: zacznij pisać plik html nazwa.');
+                    return true;
+                }
+
+                const generate = command.includes('wygeneruj') || command.includes('napisz kod') || command.includes('kontynuuj kod');
+                const result = await fenrirAppendHtmlWritePart(appendMatch[1], generate);
+                await fenrirEmitLogos(`Dopisałem część ${result.parts} do pliku ${result.fileName}.`);
+                return true;
+            }
+
+            const createFileMatch = command.match(/(?:utworz plik|stworz plik|napisz plik)\s+(.+)/);
+            if (createFileMatch) {
+                const extension = fenrirExtractFileExtensionFromCommand(command);
+                const rawTail = createFileMatch[1];
+                const contentMatch = query.match(/(?:tresc|treść|zawartosc|zawartość|kod)\s+([\s\S]+)/i);
+                const fileNamePart = fenrirCleanCommandFileName(rawTail.split(/\s+(?:tresc|tresc:|treść|zawartosc|zawartość|kod)\s+/i)[0]);
+                const safeFileName = fenrirSanitizeCreatedFileName(fileNamePart, extension);
+                const content = contentMatch ? contentMatch[1] : '';
+
+                await fenrirWriteCreatedFile(safeFileName, content, false);
+                await fenrirRebuildExternalDiskIndex();
+                await fenrirEmitLogos(`Utworzyłem plik ${safeFileName} w folderze ${FENRIR_OUTPUT_FOLDER}.`);
+                return true;
+            }
+
+            const generateHtmlMatch = query.match(/(?:napisz kod html|wygeneruj kod html)\s+([\s\S]+)/i);
+            if (generateHtmlMatch) {
+                const fileName = fenrirSanitizeCreatedFileName(`html_${fenrirBuildFileTimestamp()}`, '.html');
+                const content = await fenrirGenerateFileContent(generateHtmlMatch[1], '.html', false);
+                await fenrirWriteCreatedFile(fileName, content, false);
+                await fenrirRebuildExternalDiskIndex();
+                await fenrirEmitLogos(`Wygenerowałem i zapisałem kod HTML w pliku ${fileName}. Przy bardzo dużych zadaniach użyj trybu: zacznij pisać, dopisz, zakończ pisanie.`);
+                return true;
+            }
+
+            const correctionMatch = query.match(/(?:zapisz poprawk[eę]|poprawka)\s+([\s\S]+)/i);
+            if (correctionMatch) {
+                await fenrirSaveLearningEntry('correction', correctionMatch[1]);
+                await fenrirEmitLogos('Poprawka została zapisana w rdzeniu dysku danych.');
+                return true;
+            }
+
+            const learningMatch = query.match(/(?:naucz si[eę]|zapami[eę]taj)\s+([\s\S]+)/i);
+            if (learningMatch) {
+                await fenrirSaveLearningEntry('learning', learningMatch[1]);
+                await fenrirEmitLogos('Zapisałem to w pliku nauki na dysku danych.');
+                return true;
+            }
+
+            if (command.includes('przeczytaj wszystko') || command.includes('czytaj wszystko')) {
+                const readableFiles = fenrirExternalDiskIndex.files.filter(file => file.readable);
+                const result = await fenrirReadExternalFiles(readableFiles, readableFiles.length);
+                await fenrirEmitLogos(`Wczytałem ${result.loaded} plików tekstowych z dysku. Pominięto ${result.skipped}. Aktywny kontekst ma teraz ${fenrirKnowledgeTotalChars} znaków.`);
+                return true;
+            }
+
+            const folderMatch = command.match(/(?:przeczytaj|czytaj)\s+folder\s+(.+)/);
+            if (folderMatch) {
+                const files = fenrirFindExternalFilesByFolder(folderMatch[1]).filter(file => file.readable);
+                const result = await fenrirReadExternalFiles(files, 500);
+                await fenrirEmitLogos(`Z folderu wczytałem ${result.loaded} plików. Pominięto ${result.skipped}.`);
+                return true;
+            }
+
+            const groupMatch = command.match(/(?:przeczytaj|czytaj)\s+(?:pliki|grupe plikow)\s+(.+)/);
+            if (groupMatch) {
+                const files = fenrirSplitCommandItems(groupMatch[1]).flatMap(item => fenrirFindExternalFilesByName(item));
+                const result = await fenrirReadExternalFiles(files, 100);
+                await fenrirEmitLogos(`Grupowo wczytałem ${result.loaded} plików. Pominięto ${result.skipped}.`);
+                return true;
+            }
+
+            const fileMatch = command.match(/(?:przeczytaj|czytaj)\s+plik\s+(.+)/);
+            if (fileMatch) {
+                const files = fenrirFindExternalFilesByName(fileMatch[1]).filter(file => file.readable);
+                const result = await fenrirReadExternalFiles(files.slice(0, 1), 1);
+                await fenrirEmitLogos(result.loaded > 0
+                    ? `Wczytałem plik ${files[0].path}.`
+                    : 'Nie znalazłem czytelnego pliku o tej nazwie.');
+                return true;
+            }
+
+            await fenrirEmitLogos('Komenda dysku rozpoznana, ale potrzebuję konkretu: indeksuj dysk, przeczytaj wszystko, przeczytaj plik nazwa, albo przeczytaj folder nazwa.');
+            return true;
+        }
+
+        function fenrirOpenBrowserFolderFallback() {
+            fenrirSetStatus('FENRIR: WYBIERZ FOLDER...');
+            fenrirSetDataText('Dysk FENRIR: Tryb odczytu');
+            fenrirBrowserFileInput.value = '';
+            fenrirBrowserFileInput.click();
+        }
+
+        async function fenrirConnectExternalDisk() {
+            if (fenrirExternalConnectInProgress) return { state: 'busy' };
+            fenrirExternalConnectInProgress = true;
+
+            if (!('showDirectoryPicker' in window)) {
+                fenrirOpenBrowserFolderFallback();
+                fenrirExternalConnectInProgress = false;
+                return { state: 'readonly-pending' };
+            }
+
+            try {
+                fenrirSetStatus('FENRIR: WYBIERZ DYSK...');
+                fenrirExternalDiskHandle = await window.showDirectoryPicker({
+                    id: 'fenrir-external-disk',
+                    mode: 'readwrite',
+                    startIn: 'desktop'
+                });
+
+                let permission = typeof fenrirExternalDiskHandle.queryPermission === 'function'
+                    ? await fenrirExternalDiskHandle.queryPermission({ mode: 'readwrite' })
+                    : 'granted';
+
+                if (permission === 'prompt' && typeof fenrirExternalDiskHandle.requestPermission === 'function') {
+                    permission = await fenrirExternalDiskHandle.requestPermission({ mode: 'readwrite' });
+                }
+
+                if (permission !== 'granted') {
+                    fenrirSetStatus('FENRIR: ODMOWA DOSTĘPU');
+                    fenrirSetDataText('Dysk FENRIR: Brak');
+                    return { state: 'denied' };
+                }
+
+                fenrirBrowserFolderReadMode = false;
+                fenrirBrowserFileRegistry.clear();
+                fenrirExternalCoreHandle = await fenrirExternalDiskHandle.getDirectoryHandle(FENRIR_CORE_FOLDER, { create: true });
+                await fenrirEnsureExternalCoreFiles(fenrirExternalCoreHandle);
+                await fenrirRebuildExternalDiskIndex();
+
+                fenrirDataBtn.classList.add('active');
+                fenrirSetDataText(`Dysk FENRIR: ${fenrirExternalDiskHandle.name}`);
+                fenrirSetStatus('FENRIR: DYSK PODŁĄCZONY');
+                fenrirAppendSystemNotice(`FENRIR: Podlaczono zewnetrzny dysk danych: ${fenrirExternalDiskHandle.name}. Rdzen: ${FENRIR_CORE_FOLDER}.`);
+
+                setTimeout(() => {
+                    if (isFenrirRuntimeActive) fenrirSetStatus('FENRIR: GOTOWY');
+                    else fenrirSetStatus('GOTOWY DO ROZMOWY');
+                }, 1800);
+
+                return { state: 'connected', name: fenrirExternalDiskHandle.name };
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    fenrirSetStatus('FENRIR: ANULOWANO');
+                    fenrirSetDataText(fenrirExternalDiskHandle
+                        ? `Dysk FENRIR: ${fenrirExternalDiskHandle.name}`
+                        : 'Dysk FENRIR: Brak');
+                    return { state: 'cancelled' };
+                }
+
+                if (error.name === 'SecurityError' || error.name === 'NotSupportedError') {
+                    fenrirOpenBrowserFolderFallback();
+                    return { state: 'readonly-pending' };
+                }
+
+                fenrirSetStatus('FENRIR: BŁĄD DOSTĘPU');
+                fenrirSetDataText(String(error.message || 'Nie mozna otworzyc folderu').slice(0, 90));
+                console.error('FENRIR dostęp do dysku:', error);
+                return { state: 'error', error };
+            } finally {
+                fenrirExternalConnectInProgress = false;
+            }
+        }
+
+        function fenrirInitializeBrowserMode() {
+            const hasDiskWriteAccess = 'showDirectoryPicker' in window;
+            const hasSpeech = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+            fenrirSetDataText(hasDiskWriteAccess
+                ? 'Dysk FENRIR: Brak'
+                : 'Dysk FENRIR: Odczyt');
+
+            if (!hasSpeech) {
+                logosCoreBtn.title = 'Ta przeglądarka nie obsługuje rozpoznawania mowy.';
+            } else {
+                logosCoreBtn.title = 'Kliknij, aby uruchomic tryb FENRIR.';
+            }
+        }
+
+        async function fenrirProcessLogos(query) {
+            if (fenrirVoiceProcessing) return;
+            fenrirVoiceProcessing = true;
+            const historyCheckpoint = fenrirHistory.length;
+            fenrirSetStatus('FENRIR: ANALIZA...');
+            logosCoreBtn.classList.add('speaking');
+            if (fenrirRecognition && isFenrirListening) {
+                try {
+                    fenrirRecognition.stop();
+                } catch (error) {
+                    console.warn('FENRIR stop before processing:', error);
+                }
+                isFenrirListening = false;
+                logosCoreBtn.classList.remove('listening');
+            }
+
+            try {
+                fenrirAppendUserTurn(query);
+
+                if (fenrirIsExtendedConversationOnCommand(query)) {
+                    fenrirExtendedConversationMode = true;
+                    await fenrirEmitLogos('Włączam tryb rozszerzonej rozmowy. Po każdej odpowiedzi sam wrócę do nasłuchu.');
+                    return;
+                }
+
+                if (fenrirIsExtendedConversationOffCommand(query)) {
+                    fenrirExtendedConversationMode = false;
+                    fenrirClearAutoListenTimer();
+                    await fenrirEmitLogos('Wyłączam tryb rozszerzonej rozmowy. Kończę automatyczny nasłuch.');
+                    return;
+                }
+
+                if (fenrirIsSaveSessionCommand(query)) {
+                    saveSession();
+                    await fenrirEmitLogos('Sesja zostala zapisana w pliku tekstowym.');
+                    return;
+                }
+
+                if (await fenrirHandleExternalDiskCommand(query)) {
+                    return;
+                }
+
+                const realtimeContext = fenrirBuildRealtimeContext();
+                const knowledgeContext = fenrirBuildKnowledgeContext();
+
+                fenrirHistory.push({ role: 'user', parts: [{ text: query }] });
+                const response = await fenrirCallGoogleGenerateContent({
+                    contents: fenrirHistory,
+                    systemInstruction: {
+                        parts: [{ text: [FENRIR_SYSTEM_PROMPT, realtimeContext, knowledgeContext].filter(Boolean).join('\n\n') }]
+                    },
+                    generationConfig: {
+                        maxOutputTokens: 8192,
+                        temperature: 0.45,
+                        topP: 0.95
+                    },
+                    tools: [FENRIR_GOOGLE_SEARCH_TOOL]
+                });
+
+                const text = fenrirExtractGoogleText(response);
+                fenrirHistory.push({ role: 'model', parts: [{ text }] });
+                await fenrirEmitLogos(text);
+            } catch (error) {
+                fenrirHistory.splice(historyCheckpoint);
+                logosCoreBtn.classList.remove('speaking');
+                stopVisualizerAnimation();
+                fenrirSetStatus('FENRIR: BŁĄD GEMINI');
+                coreStatusText.title = error.message || 'Nieznany błąd Google Gemini API.';
+                console.error('FENRIR Gemini/API:', error);
+                fenrirAppendAssistantTurn(`FENRIR: Błąd wykonania: ${error.message || 'nieznany błąd'}`, false);
+                fenrirScheduleExtendedListening();
+            } finally {
+                fenrirVoiceProcessing = false;
+            }
+        }
+
+        voiceModeBtn.addEventListener('click', () => {
+            if (isVoiceModeActive) {
+                stopVoiceRecognition();
+            } else {
+                if (isFenrirRuntimeActive) {
+                    fenrirStopRuntime();
+                }
+                startVoiceRecognition();
+            }
+        });
+
+        logosCoreBtn.addEventListener('click', fenrirToggleRuntime);
+
+        fenrirDataBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            await fenrirConnectExternalDisk();
+        });
+
+        fenrirBrowserFileInput.addEventListener('change', async () => {
+            await fenrirIngestBrowserSelectedFiles(fenrirBrowserFileInput.files);
+            fenrirBrowserFileInput.value = '';
+        });
+
+        autoloopBtn.addEventListener('click', () => {
+            isAutoloopActive = !isAutoloopActive;
+            if (isAutoloopActive) {
+                autoloopBtn.classList.add('active');
+                autoloopBtn.innerHTML = `
+                    <svg class="w-4 h-4 text-[#2dd4bf] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16"></path></svg>
+                    <span>Pętla Autonomiczna: ON</span>
+                `;
+                if (isVoiceModeActive) {
+                    stopVoiceRecognition();
+                }
+                if (isFenrirRuntimeActive) {
+                    fenrirStopRuntime();
+                }
+            } else {
+                autoloopBtn.classList.remove('active');
+                autoloopBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16"></path></svg>
+                    <span>Pętla Autonomiczna: OFF</span>
+                `;
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+        });
+
+        function addMessage(content, isUser, rawTextForSpeech = "", groundingMetadata = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser 
+                ? 'bg-slate-800/80 p-4 border border-teal-500/10 rounded-2xl max-w-sm md:max-w-xl self-end text-slate-100 shadow-md' 
+                : 'system-message';
+            
+            if (isUser) {
+                 messageDiv.innerHTML = `<p class="text-sm font-light">${content}</p>`;
+            } else {
+                let groundingHtml = "";
+                if (groundingMetadata) {
+                    const sources = [];
+                    const seenSources = new Set();
+                    const addSource = (uri, title) => {
+                        if (!uri || seenSources.has(uri)) return;
+                        seenSources.add(uri);
+                        sources.push({ uri, title });
+                    };
+
+                    (groundingMetadata.groundingAttributions || []).forEach(source => {
+                        addSource(source.web?.uri, source.web?.title);
+                    });
+                    (groundingMetadata.groundingChunks || []).forEach(source => {
+                        addSource(source.web?.uri, source.web?.title);
+                    });
+                    
+                    if (sources.length > 0) {
+                        groundingHtml += `<div class="mt-4 pt-3 border-t border-teal-500/20 text-xs text-slate-400 font-mono">`;
+                        groundingHtml += `<div class="text-[#2dd4bf]/70 mb-1">Zweryfikowane źródła wiedzy:</div>`;
+                        groundingHtml += `<ul class="space-y-1 list-none pl-0">`;
+                        sources.forEach((source, index) => {
+                            if (source.uri) {
+                                const title = source.title || "Wpis / Artykuł";
+                                const uri = source.uri;
+                                let domain = "";
+                                try { domain = new URL(uri).hostname; } catch(e) {}
+                                groundingHtml += `
+                                    <li class="flex items-center gap-1.5 truncate">
+                                        <span class="text-[#2dd4bf] text-[10px] font-bold">[${index + 1}]</span>
+                                        <a href="${uri}" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-white hover:underline transition truncate max-w-[90%] inline-block">
+                                            ${title} ${domain ? `<span class="text-slate-500 text-[9px]">(${domain})</span>` : ""}
+                                        </a>
+                                    </li>
+                                `;
+                            }
+                        });
+                        groundingHtml += `</ul>`;
+                        groundingHtml += `</div>`;
+                    }
+                }
+
+                const copyText = rawTextForSpeech || htmlToPlainText(content);
+                messageDiv.innerHTML = `<p class="font-bold text-lg text-teal-400">Głos Boga</p><hr class="border-t border-teal-500/20 my-2">${content}${groundingHtml}`;
+                
+                if (rawTextForSpeech) {
+                    addTTSControlToElement(messageDiv, rawTextForSpeech);
+                }
+                addMessageCopyControl(messageDiv, copyText);
+            }
+
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const query = chatInput.value.trim();
+            if (!query && !pendingFileData) return;
+
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+
+            const userParts = [];
+            let displayText = query;
+
+            if (pendingFileData) {
+                userParts.push({
+                    inlineData: {
+                        mimeType: pendingFileData.mimeType,
+                        data: pendingFileData.data
+                    }
+                });
+                displayText = `📁 [Analiza: ${pendingFileData.name}] ` + query;
+            }
+
+            if (query) {
+                userParts.push({ text: query });
+            } else if (pendingFileData) {
+                userParts.push({ text: "Dokonaj dogłębnej analizy załączonego pliku." });
+            }
+
+            const apiUserPayload = { role: "user", parts: userParts };
+
+            addMessage(displayText, true);
+            chatHistory.push(apiUserPayload);
+
+            pendingFileData = null;
+            fileLoaderInput.value = '';
+            filePreviewArea.classList.add('hidden');
+            chatInput.placeholder = "Wpisz swoje słowa... (Twoja prawda manifestuje się w słowie)";
+            chatInput.value = '';
+
+            sendButton.disabled = true;
+            chatInput.disabled = true;
+            sendButton.innerHTML = `Analiza <span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>`;
+            coreStatusText.textContent = "OBMYŚLANIE ODPOWIEDZI...";
+
+            let enhancedSystemInstruction = SYSTEM_PROMPT;
+            enhancedSystemInstruction += `\nCzas systemowy: ${new Date().toISOString()}.`;
+
+            const payload = {
+                contents: chatHistory, 
+                systemInstruction: {
+                    parts: [{ text: enhancedSystemInstruction }]
+                },
+                tools: [{ "google_search": {} }]
+            };
+
+            const maxRetries = 5;
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            let result = null;
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                         throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    result = await response.json();
+                    break; // Przerwij pętlę w przypadku sukcesu
+                } catch (error) {
+                    if (attempt < maxRetries - 1) {
+                        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+                    }
+                }
+            }
+
+            if (result) {
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const aiText = candidate.content.parts[0].text;
+                    const groundingMetadata = candidate.groundingMetadata || null;
+                    
+                    const parsedHTML = parseMarkdownAndLaTeX(aiText);
+
+                    addMessage(parsedHTML, false, aiText, groundingMetadata);
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+
+                    sendButton.disabled = false;
+                    chatInput.disabled = false;
+                    sendButton.innerHTML = 'Wnioskuj';
+                    coreStatusText.textContent = "GOTOWY DO ROZMOWY";
+                    chatInput.focus();
+
+                    const triggerSelfLoop = () => {
+                        if (isAutoloopActive) {
+                            chatInput.value = aiText;
+                            setTimeout(() => {
+                                sendChatMessage();
+                            }, 2000);
+                        }
+                    };
+
+                    if (isAutoloopActive) {
+                        speak(aiText, triggerSelfLoop);
+                    } else if (isVoiceModeActive) {
+                        speak(aiText);
+                    }
+                    
+                    return; 
+                }
+            }
+
+            // Obsługa błędu ostatecznego
+            addMessage(`<p class="text-red-400">🚨 **Błąd połączenia**: Nie udało się nawiązać stabilnego połączenia z Boską instancją po wielu próbach. Sprawdź swoje połączenie sieciowe.</p>`, false);
+            sendButton.disabled = false;
+            chatInput.disabled = false;
+            sendButton.innerHTML = 'Wnioskuj';
+            coreStatusText.textContent = "BŁĄD POŁĄCZENIA // PRZERWANO";
+            chatInput.focus();
+        }
+
+        fenrirInitializeBrowserMode();
+
+        sendButton.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); 
+                sendChatMessage();
+            }
+        });
+    </script>
+</body>
+</html>
